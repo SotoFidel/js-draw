@@ -7,6 +7,7 @@ let isDrawing = false;
 let offsetX = 0;
 let offsetY = 0;
 let changeStack = [];
+let redoStack = [];
 let oldCoords = { x: 0, y: 0 }
 let newCoords = { x: 0, y: 0 }
 
@@ -20,6 +21,7 @@ function setupCanvasEvents() {
     canvas.addEventListener("mousedown", (event) => {
         // left click to draw
         if (event.buttons == 1) {
+            redoStack = [];
             ctx.beginPath();
             isDrawing = true;
             changeStack.push([]);
@@ -49,24 +51,32 @@ function setupCanvasEvents() {
         oldCoords = newCoords;
     });
 
-    // undo
     addEventListener("keydown", (event) => {
+        // undo
         if (event.ctrlKey && event.key == 'z') {
+            console.log("undo");
             ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-            if (changeStack.length > 0) { changeStack.pop(); }
+            if (changeStack.length > 0) { redoStack.push(changeStack.pop()); }
 
-            for (let changeBatch = 0; changeBatch < changeStack.length; changeBatch++) {
-                ctx.beginPath();
-                if (changeStack[changeBatch].length > 0) {
-                    ctx.moveTo(changeStack[changeBatch][0].from.x, changeStack[changeBatch][0].from.y);
-                    for (let change = 0; change < changeStack[changeBatch].length; change++) {
-                        ctx.lineTo(changeStack[changeBatch][change].to.x, changeStack[changeBatch][change].to.y);
-                        ctx.stroke();
-                    }
+        }
+        if (event.ctrlKey && event.shiftKey && event.key == 'Z') {
+            console.log("redo");
+            if (redoStack.length > 0) {
+                changeStack.push(redoStack.pop());
+            }
+        }
+        for (let changeBatch = 0; changeBatch < changeStack.length; changeBatch++) {
+            ctx.beginPath();
+            if (changeStack[changeBatch]?.length > 0) {
+                ctx.moveTo(changeStack[changeBatch][0].from.x, changeStack[changeBatch][0].from.y);
+                for (let change = 0; change < changeStack[changeBatch].length; change++) {
+                    ctx.lineTo(changeStack[changeBatch][change].to.x, changeStack[changeBatch][change].to.y);
+                    ctx.stroke();
                 }
             }
         }
     });
+
 
 }
 
