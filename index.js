@@ -53,25 +53,32 @@ function setupCanvasEvents() {
 
     addEventListener("keydown", (event) => {
         // undo
+        let changed = false;
         if (event.ctrlKey && event.key == 'z') {
             console.log("undo");
             ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
             if (changeStack.length > 0) { redoStack.push(changeStack.pop()); }
-
+            changed = true;
         }
         if (event.ctrlKey && event.shiftKey && event.key == 'Z') {
             console.log("redo");
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
             if (redoStack.length > 0) {
                 changeStack.push(redoStack.pop());
             }
+            changed = true;
         }
-        for (let changeBatch = 0; changeBatch < changeStack.length; changeBatch++) {
-            ctx.beginPath();
-            if (changeStack[changeBatch]?.length > 0) {
-                ctx.moveTo(changeStack[changeBatch][0].from.x, changeStack[changeBatch][0].from.y);
-                for (let change = 0; change < changeStack[changeBatch].length; change++) {
-                    ctx.lineTo(changeStack[changeBatch][change].to.x, changeStack[changeBatch][change].to.y);
-                    ctx.stroke();
+
+        if (changed) {
+
+            for (let changeBatch = 0; changeBatch < changeStack.length; changeBatch++) {
+                ctx.beginPath();
+                if (changeStack[changeBatch]?.length > 0) {
+                    ctx.moveTo(changeStack[changeBatch][0].from.x, changeStack[changeBatch][0].from.y);
+                    for (let change = 0; change < changeStack[changeBatch].length; change++) {
+                        ctx.lineTo(changeStack[changeBatch][change].to.x, changeStack[changeBatch][change].to.y);
+                        ctx.stroke();
+                    }
                 }
             }
         }

@@ -9,7 +9,34 @@
   <body style="display: flex">
     <div style="flex-grow: 1; display: flex; flex-direction: column">
       <div style="flex-grow: 1; display: flex; flex-direction: row">
-        <div style="background-color: lightgrey">menu</div>
+        <div
+          style="
+            background-color: lightgrey;
+            display: flex;
+            flex-direction: column;
+          "
+        >
+          <div style="display: flex; flex-direction: row">
+            <div
+              style="
+                background-color: red;
+                width: 30px;
+                height: 30px;
+                margin: 2px;
+              "
+            ></div>
+            <div
+              style="
+                background-color: black;
+                width: 30px;
+                height: 30px;
+                margin: 2px;
+              "
+            ></div>
+          </div>
+          <div><button>erase</button></div>
+          <div><button>brush</button></div>
+        </div>
         <div id="canvasContainer" style="flex-grow: 1"></div>
       </div>
       <footer style="background-color: lightgrey; margin-top: auto">hi</footer>
