@@ -10,6 +10,8 @@ let changeStack = [];
 let redoStack = [];
 let oldCoords = { x: 0, y: 0 }
 let newCoords = { x: 0, y: 0 }
+let changedArea = { x: 0, y: 0, width: 0, height: 0 };
+let prevImageData;
 
 function main() {
     createCanvas();
@@ -23,65 +25,62 @@ function setupCanvasEvents() {
         if (event.buttons == 1) {
             redoStack = [];
             ctx.beginPath();
+            changedArea.x = event.x - offsetX;
+            changedArea.y = event.y - offsetY;
+            changedArea.width = 0;
+            changedArea.height = 0;
             isDrawing = true;
-            changeStack.push([]);
         }
     });
 
     ["mouseup"].forEach((eventType) => {
-        canvas.addEventListener(eventType, () => { isDrawing = false; });
+        canvas.addEventListener(eventType, () => {
+            isDrawing = false;
+            console.log(changedArea);
+            changeStack.push(ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height));
+            // ctx.rect(changedArea.x, changedArea.y, changedArea.width, changedArea.height);
+            // ctx.stroke();
+        });
     });
 
     canvas.addEventListener("mousemove", (event) => {
         newCoords = { x: event.x - offsetX, y: event.y - offsetY };
         if (isDrawing) {
-            ctx.lineTo(event.x - offsetX, event.y - offsetY);
+            ctx.lineTo(newCoords.x, newCoords.y);
+            if (newCoords.x > changedArea.x) {
+                changedArea.width = Math.max(changedArea.width, newCoords.x - changedArea.x);
+            } else if (newCoords.x < changedArea.x) {
+                changedArea.width += changedArea.x - newCoords.x;
+                changedArea.x = newCoords.x;
+            }
+            if (newCoords.y > changedArea.y) {
+                changedArea.height = Math.max(changedArea.height, newCoords.y - changedArea.y);
+            } else if (newCoords.y < changedArea.y) {
+                changedArea.height += changedArea.y - newCoords.y;
+                changedArea.y = newCoords.y;
+            }
             ctx.stroke();
-            changeStack[changeStack.length - 1].push({
-                from: {
-                    x: oldCoords.x,
-                    y: oldCoords.y
-                },
-                to: {
-                    x: newCoords.x,
-                    y: newCoords.y
-                }
-            })
         }
         oldCoords = newCoords;
     });
 
     addEventListener("keydown", (event) => {
         // undo
-        let changed = false;
         if (event.ctrlKey && event.key == 'z') {
-            console.log("undo");
-            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-            if (changeStack.length > 0) { redoStack.push(changeStack.pop()); }
-            changed = true;
+            if (changeStack.length > 1) {
+                redoStack.push(changeStack.pop());
+                ctx.putImageData(changeStack[changeStack.length - 1], 0, 0);
+            } else if (changeStack.length == 1) {
+                ctx.putImageData(changeStack[0], 0, 0);
+                redoStack.push(changeStack.pop());
+            }
         }
         if (event.ctrlKey && event.shiftKey && event.key == 'Z') {
-            console.log("redo");
-            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
             if (redoStack.length > 0) {
-                changeStack.push(redoStack.pop());
-            }
-            changed = true;
-        }
-
-        if (changed) {
-
-            for (let changeBatch = 0; changeBatch < changeStack.length; changeBatch++) {
-                ctx.beginPath();
-                if (changeStack[changeBatch]?.length > 0) {
-                    ctx.moveTo(changeStack[changeBatch][0].from.x, changeStack[changeBatch][0].from.y);
-                    for (let change = 0; change < changeStack[changeBatch].length; change++) {
-                        ctx.lineTo(changeStack[changeBatch][change].to.x, changeStack[changeBatch][change].to.y);
-                        ctx.stroke();
-                    }
-                }
+                ctx.putImageData(redoStack.pop(), 0, 0);
             }
         }
+
     });
 
 
@@ -99,7 +98,9 @@ function createCanvas() {
     canvas.setAttribute("width", `${canvasContainerRect.width}`);
     canvas.setAttribute("height", `${canvasContainerRect.height}`);
     canvasContainer.replaceWith(canvas);
-    ctx = canvas.getContext("2d");
+    ctx = canvas.getContext("2d", { willReadFrequently: true });
+    ctx.lineWidth = 10;
+    changeStack.push(ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height));
 }
 
 window.onload = function() { main(); }
