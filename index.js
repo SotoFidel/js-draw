@@ -10,51 +10,66 @@ let changeStack = [];
 let redoStack = [];
 let oldCoords = { x: 0, y: 0 }
 let newCoords = { x: 0, y: 0 }
-let changedArea = { x: 0, y: 0, width: 0, height: 0 };
 let prevImageData;
 
 let modes = {
-    // TODO: fn should be a function that gets called based on currentMode
     Drawing: { mode: "drawing", fn: draw },
     Erasing: { mode: "erasing", fn: erase }
 };
 
 let currentMode = modes.Drawing;
 
-function main() {
-    createCanvas();
-    calculateOffsets();
-    setupCanvasEvents();
-}
 
 function setupCanvasEvents() {
     canvas.addEventListener("mousedown", (event) => {
         // left click to draw
         if (event.buttons == 1) {
             redoStack = [];
-            ctx.beginPath();
-            changedArea.x = event.x - offsetX;
-            changedArea.y = event.y - offsetY;
-            changedArea.width = 0;
-            changedArea.height = 0;
             cursorEnabled = true;
+            if (currentMode.mode == "drawing") {
+                ctx.beginPath();
+            }
+            if (currentMode.mode == "erasing") {
+                ctx.clearRect(Math.max(newCoords.x - 5, 0), Math.max(newCoords.y - 5, 0), 10, 10);
+            }
         }
     });
 
-    ["mouseup"].forEach((eventType) => {
+    ["mouseup", "mouseleave"].forEach((eventType) => {
         canvas.addEventListener(eventType, () => {
             cursorEnabled = false;
-            console.log(changedArea);
             changeStack.push(ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height));
-            // ctx.rect(changedArea.x, changedArea.y, changedArea.width, changedArea.height);
-            // ctx.stroke();
         });
     });
 
     canvas.addEventListener("mousemove", (event) => {
-        newCoords = { x: event.x - offsetX, y: event.y - offsetY };
-        currentMode.fn();
         oldCoords = newCoords;
+        newCoords = { x: event.x - offsetX, y: event.y - offsetY };
+
+        // console.log("Painting new blue at: ", newCoords);
+        // ctx.beginPath();
+        // ctx.strokeStyle = "blue";
+        // ctx.lineWidth = 3;
+        // ctx.rect(newCoords.x - 5, newCoords.y - 5, 10, 10);
+        // ctx.stroke();
+        // console.log("painting old red at: ", oldCoords);
+        // ctx.beginPath();
+        // ctx.strokeStyle = "red";
+        // ctx.lineWidth = 2;
+        // ctx.rect(oldCoords.x - 5, oldCoords.y - 5, 10, 10);
+        // ctx.stroke();
+        // let newC;
+        //
+        // ctx.beginPath();
+        // ctx.strokeStyle = "purple";
+        // ctx.lineWidth = 4;
+        // for (let i = 0; i <= 1; i += .05) {
+        //     newC = interpolate(oldCoords, newCoords, i);
+        //     ctx.rect(newC.x - 5, newC.y - 5, 10, 10);
+        //     ctx.stroke();
+        // }
+        // console.log("mousemove ", oldCoords, newCoords);
+        currentMode.fn();
     });
 
     addEventListener("keydown", (event) => {
@@ -79,30 +94,36 @@ function setupCanvasEvents() {
 
 }
 
+function update() {
+    currentMode.fn();
+    requestAnimationFrame(update);
+}
+
 function draw() {
 
     if (cursorEnabled) {
         ctx.lineTo(newCoords.x, newCoords.y);
-        if (newCoords.x > changedArea.x) {
-            changedArea.width = Math.max(changedArea.width, newCoords.x - changedArea.x);
-        } else if (newCoords.x < changedArea.x) {
-            changedArea.width += changedArea.x - newCoords.x;
-            changedArea.x = newCoords.x;
-        }
-        if (newCoords.y > changedArea.y) {
-            changedArea.height = Math.max(changedArea.height, newCoords.y - changedArea.y);
-        } else if (newCoords.y < changedArea.y) {
-            changedArea.height += changedArea.y - newCoords.y;
-            changedArea.y = newCoords.y;
-        }
         ctx.stroke();
     }
 }
 
 function erase() {
     if (cursorEnabled) {
-        ctx.clearRect(Math.max(newCoords.x - 10, 0), Math.max(newCoords.y - 10, 0), 10, 10);
+        let nc;
+        console.log("erase ", oldCoords, newCoords);
+        for (let i = 0; i <= 1; i += .05) {
+            nc = interpolate(oldCoords, newCoords, i);
+            ctx.clearRect(Math.max(nc.x - 5, 0), Math.max(nc.y - 5, 0), 10, 10);
+        }
+        // ctx.clearRect(Math.max(newCoords.x - 5, 0), Math.max(newCoords.y - 5, 0), 10, 10);
     }
+}
+
+function interpolate(a, b, t) // points A and B, frac between 0 and 1
+{
+    var nx = a.x + (b.x - a.x) * t;
+    var ny = a.y + (b.y - a.y) * t;
+    return { x: nx, y: ny };
 }
 
 function setMethod(method) {
@@ -122,9 +143,16 @@ function createCanvas() {
     canvas.setAttribute("height", `${canvasContainerRect.height}`);
     canvasContainer.replaceWith(canvas);
     ctx = canvas.getContext("2d", { willReadFrequently: true });
-    ctx.lineWidth = 50;
+    ctx.lineWidth = 400;
     ctx.lineJoin = "round";
+    ctx.lineCap = "round";
     changeStack.push(ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height));
 }
 
-window.onload = function() { main(); }
+window.onload = function() {
+    createCanvas();
+    calculateOffsets();
+    setupCanvasEvents();
+    // requestAnimationFrame(update);
+}
+
