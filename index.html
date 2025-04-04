@@ -28,8 +28,12 @@
               "
             ></div>
           </div>
-          <div><button onclick="setMethod('Erasing')">erase</button></div>
-          <div><button onclick="setMethod('Drawing')">brush</button></div>
+          <div class="tool">
+            <button onclick="setMethod('Drawing')">Draw</button>
+          </div>
+          <div class="tool">
+            <button onclick="setMethod('Erasing')">Erase</button>
+          </div>
         </div>
         <div id="canvasContainer" style="flex-grow: 1"></div>
       </div>
