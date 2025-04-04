@@ -13,8 +13,8 @@ let newCoords = { x: 0, y: 0 }
 let prevImageData;
 
 let modes = {
-    Drawing: { mode: "drawing", fn: draw },
-    Erasing: { mode: "erasing", fn: erase }
+    Drawing: { mode: "drawing", fn: draw, strokeWidth: 10 },
+    Erasing: { mode: "erasing", fn: erase, strokeWidth: 10 }
 };
 
 let currentMode = modes.Drawing;
@@ -28,6 +28,10 @@ function setupCanvasEvents() {
             cursorEnabled = true;
             if (currentMode.mode == "drawing") {
                 ctx.beginPath();
+                ctx.arc(Math.max(newCoords.x, 0),
+                    Math.max(newCoords.y, 0), currentMode.strokeWidth, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.stroke();
             }
             if (currentMode.mode == "erasing") {
                 ctx.clearRect(Math.max(newCoords.x - 5, 0), Math.max(newCoords.y - 5, 0), 10, 10);
@@ -102,8 +106,14 @@ function update() {
 function draw() {
 
     if (cursorEnabled) {
-        ctx.lineTo(newCoords.x, newCoords.y);
-        ctx.stroke();
+        for (let i = 0; i <= 1; i += .02) {
+            nc = interpolate(oldCoords, newCoords, i);
+            ctx.beginPath();
+            ctx.arc(Math.max(nc.x, 0),
+                Math.max(nc.y, 0), currentMode.strokeWidth, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+        }
     }
 }
 
@@ -143,9 +153,8 @@ function createCanvas() {
     canvas.setAttribute("height", `${canvasContainerRect.height}`);
     canvasContainer.replaceWith(canvas);
     ctx = canvas.getContext("2d", { willReadFrequently: true });
-    ctx.lineWidth = 400;
-    ctx.lineJoin = "round";
-    ctx.lineCap = "round";
+    ctx.lineWidth = 0;
+    ctx.fillStyle = "black";
     changeStack.push(ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height));
 }
 
