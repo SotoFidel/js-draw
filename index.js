@@ -14,8 +14,8 @@ let prevImageData;
 let color = "#000000";
 
 let modes = {
-    Drawing: { mode: "Drawing", fn: draw, strokeWidth: .5 },
-    Erasing: { mode: "Erasing", fn: erase, strokeWidth: 5 }
+    Drawing: { mode: "Drawing", fn: draw, strokeWidth: 10 },
+    Erasing: { mode: "Erasing", fn: erase, strokeWidth: 10 }
 };
 
 let currentMode = modes.Drawing;
@@ -145,7 +145,7 @@ function draw() {
 function erase() {
     if (cursorEnabled) {
         let nc;
-        console.log("erase ", oldCoords, newCoords);
+        // console.log("erase ", oldCoords, newCoords);
         for (let i = 0; i <= 1; i += .05) {
             nc = interpolate(oldCoords, newCoords, i);
             ctx.clearRect(Math.max(nc.x - 5, 0), Math.max(nc.y - 5, 0), currentMode.strokeWidth, currentMode.strokeWidth);
@@ -162,7 +162,10 @@ function interpolate(a, b, t) // points A and B, frac between 0 and 1
 }
 
 function setMethod(method) {
+    modes[currentMode.mode].strokeWidth = currentMode.strokeWidth;
     currentMode = modes[method];
+    document.querySelector("#size").value = currentMode.strokeWidth;
+    document.querySelector("#sizeVal").value = currentMode.strokeWidth;
 }
 
 function calculateOffsets() {
