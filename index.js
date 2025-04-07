@@ -35,7 +35,7 @@ function setupCanvasEvents() {
                 ctx.stroke();
             }
             if (currentMode.mode == "Erasing") {
-                ctx.clearRect(Math.max(newCoords.x - 5, 0), Math.max(newCoords.y - 5, 0), 10, 10);
+                ctx.clearRect(Math.max(newCoords.x - (currentMode.strokeWidth / 2), 0), Math.max(newCoords.y - (currentMode.strokeWidth / 2), 0), currentMode.strokeWidth, currentMode.strokeWidth);
             }
         }
     });
@@ -148,7 +148,7 @@ function erase() {
         // console.log("erase ", oldCoords, newCoords);
         for (let i = 0; i <= 1; i += .05) {
             nc = interpolate(oldCoords, newCoords, i);
-            ctx.clearRect(Math.max(nc.x - 5, 0), Math.max(nc.y - 5, 0), currentMode.strokeWidth, currentMode.strokeWidth);
+            ctx.clearRect(Math.max(nc.x - (currentMode.strokeWidth / 2), 0), Math.max(nc.y - (currentMode.strokeWidth / 2), 0), currentMode.strokeWidth, currentMode.strokeWidth);
         }
         // ctx.clearRect(Math.max(newCoords.x - 5, 0), Math.max(newCoords.y - 5, 0), 10, 10);
     }
