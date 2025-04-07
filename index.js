@@ -11,10 +11,11 @@ let redoStack = [];
 let oldCoords = { x: 0, y: 0 }
 let newCoords = { x: 0, y: 0 }
 let prevImageData;
+let color = "#000000";
 
 let modes = {
-    Drawing: { mode: "drawing", fn: draw, strokeWidth: 10 },
-    Erasing: { mode: "erasing", fn: erase, strokeWidth: 10 }
+    Drawing: { mode: "Drawing", fn: draw, strokeWidth: .5 },
+    Erasing: { mode: "Erasing", fn: erase, strokeWidth: 5 }
 };
 
 let currentMode = modes.Drawing;
@@ -26,18 +27,19 @@ function setupCanvasEvents() {
         if (event.buttons == 1) {
             redoStack = [];
             cursorEnabled = true;
-            if (currentMode.mode == "drawing") {
+            if (currentMode.mode == "Drawing") {
                 ctx.beginPath();
                 ctx.arc(Math.max(newCoords.x, 0),
                     Math.max(newCoords.y, 0), currentMode.strokeWidth, 0, 2 * Math.PI);
                 ctx.fill();
                 ctx.stroke();
             }
-            if (currentMode.mode == "erasing") {
+            if (currentMode.mode == "Erasing") {
                 ctx.clearRect(Math.max(newCoords.x - 5, 0), Math.max(newCoords.y - 5, 0), 10, 10);
             }
         }
     });
+
 
     ["mouseup", "mouseleave"].forEach((eventType) => {
         canvas.addEventListener(eventType, () => {
@@ -98,6 +100,27 @@ function setupCanvasEvents() {
 
 }
 
+function setupUiEvents() {
+    let brushSizeInput = document.querySelector("#ribbon > input#size");
+    let brushSizeOutput = document.querySelector("#sizeVal");
+    brushSizeOutput.value = brushSizeInput.value;
+    brushSizeInput.addEventListener("input", (event) => {
+        brushSizeOutput.value = event.target.value;
+        modes[currentMode.mode].strokeWidth = event.target.value;
+    });
+    brushSizeOutput.addEventListener("change", (event) => {
+        if (event.target.value > 500) {
+            event.target.value = 500;
+        }
+        brushSizeInput.value = event.target.value;
+        modes[currentMode.mode].strokeWidth = event.target.value;
+    });
+
+    document.querySelector("#colorPicker").addEventListener("change", (event) => {
+        color = event.target.value;
+    });
+}
+
 function update() {
     currentMode.fn();
     requestAnimationFrame(update);
@@ -106,11 +129,13 @@ function update() {
 function draw() {
 
     if (cursorEnabled) {
-        for (let i = 0; i <= 1; i += .02) {
+        for (let i = 0; i <= 1; i += .01) {
             nc = interpolate(oldCoords, newCoords, i);
             ctx.beginPath();
             ctx.arc(Math.max(nc.x, 0),
                 Math.max(nc.y, 0), currentMode.strokeWidth, 0, 2 * Math.PI);
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
             ctx.fill();
             ctx.stroke();
         }
@@ -123,7 +148,7 @@ function erase() {
         console.log("erase ", oldCoords, newCoords);
         for (let i = 0; i <= 1; i += .05) {
             nc = interpolate(oldCoords, newCoords, i);
-            ctx.clearRect(Math.max(nc.x - 5, 0), Math.max(nc.y - 5, 0), 10, 10);
+            ctx.clearRect(Math.max(nc.x - 5, 0), Math.max(nc.y - 5, 0), currentMode.strokeWidth, currentMode.strokeWidth);
         }
         // ctx.clearRect(Math.max(newCoords.x - 5, 0), Math.max(newCoords.y - 5, 0), 10, 10);
     }
@@ -162,6 +187,7 @@ window.onload = function() {
     createCanvas();
     calculateOffsets();
     setupCanvasEvents();
+    setupUiEvents();
     // requestAnimationFrame(update);
 }
 

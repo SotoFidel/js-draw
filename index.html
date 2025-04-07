@@ -8,25 +8,22 @@
   </head>
   <body style="display: flex">
     <div style="flex-grow: 1; display: flex; flex-direction: column">
+      <div id="ribbon">
+        <input
+          id="size"
+          type="range"
+          min="1"
+          max="500"
+          step="1"
+          name="size"
+          value="10"
+        />
+        <label for="size" style="font-weight: bold;">Size: </label><input type="number" id="sizeVal"> px</span>
+      </div>
       <div style="flex-grow: 1; display: flex; flex-direction: row">
         <div id="sidebar">
           <div style="display: flex; flex-direction: row">
-            <div
-              style="
-                background-color: red;
-                width: 30px;
-                height: 30px;
-                margin: 2px;
-              "
-            ></div>
-            <div
-              style="
-                background-color: black;
-                width: 30px;
-                height: 30px;
-                margin: 2px;
-              "
-            ></div>
+            <div><input type="color" id="colorPicker"></div>
           </div>
           <div class="tool">
             <button onclick="setMethod('Drawing')">Draw</button>
