@@ -18,12 +18,14 @@
           name="size"
           value="5"
         />
-        <label for="size" style="font-weight: bold;">Size: </label><input type="number" id="sizeVal"> px</span>
+        <label for="size" style="font-weight: bold;">Size: </label><input type="number" id="sizeVal"> <span>px</span>
       </div>
       <div style="flex-grow: 1; display: flex; flex-direction: row">
         <div id="sidebar">
           <div style="display: flex; flex-direction: row">
-            <div style="width:100%;"><input type="color" id="colorPicker"></div>
+            <div style="width:100%;">
+              <input type="color" id="colorPicker">
+            </div>
           </div>
           <div class="tool">
             <button id="draw-btn" onclick="setMethod('Drawing')">Draw</button>
@@ -32,7 +34,16 @@
             <button id="erase-btn" onclick="setMethod('Erasing')">Erase</button>
           </div>
           <div class="tool">
+            <button id="clear-btn" onclick="clearCanvas()">Clear</button>
+          </div>
+          <div class="tool">
             <button id="fill-btn">Fill [WIP]</button>
+          </div>
+          <div class="tool">
+            <button id="undo-btn" onclick="undoAction()">Undo</button>
+          </div>
+          <div class="tool">
+            <button id="redo-btn" onclick="redoAction()">Redo</button>
           </div>
           <hr style="color: black; height:1px; width: 100%; background: black;" />
           <div class="tool">
