@@ -16,23 +16,32 @@
           max="500"
           step="1"
           name="size"
-          value="10"
+          value="5"
         />
         <label for="size" style="font-weight: bold;">Size: </label><input type="number" id="sizeVal"> px</span>
       </div>
       <div style="flex-grow: 1; display: flex; flex-direction: row">
         <div id="sidebar">
           <div style="display: flex; flex-direction: row">
-            <div><input type="color" id="colorPicker"></div>
+            <div style="width:100%;"><input type="color" id="colorPicker"></div>
           </div>
           <div class="tool">
-            <button onclick="setMethod('Drawing')">Draw</button>
+            <button id="draw-btn" onclick="setMethod('Drawing')">Draw</button>
           </div>
           <div class="tool">
-            <button onclick="setMethod('Erasing')">Erase</button>
+            <button id="erase-btn" onclick="setMethod('Erasing')">Erase</button>
+          </div>
+          <div class="tool">
+            <button id="fill-btn">Fill [WIP]</button>
+          </div>
+          <hr style="color: black; height:1px; width: 100%; background: black;" />
+          <div class="tool">
+            <button id="export-btn" onclick="exportImage()">Export</button>
           </div>
         </div>
-        <div id="canvasContainer" style="flex-grow: 1"></div>
+        <div style="position:relative; width: 100%; height: 100%;">
+          <div id="canvasContainer" style="width: 100%; height: 100%;"></div>
+        </div>
       </div>
       <!-- <footer style="background-color: lightgrey; margin-top: auto">hi</footer> -->
     </div>

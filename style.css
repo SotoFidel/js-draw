@@ -1,7 +1,21 @@
-html, body {
+html,
+body {
     height: 100%;
     margin: 0px;
     font-family: system-ui, sans-serif;
+    overflow: hidden;
+}
+
+canvas {
+    cursor: none;
+}
+
+#toolLayer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    /* background: red; */
+    pointer-events: none;
 }
 
 #sidebar {
@@ -20,7 +34,8 @@ html, body {
         width: 100%;
     }
 
-    input:hover,button:hover {
+    input:hover,
+    button:hover {
         cursor: pointer;
     }
 
@@ -38,12 +53,12 @@ html, body {
 
 #sizeVal {
     background-color: gainsboro;
-    width:50px;
+    width: 50px;
     border: 2px solid black;
     border-radius: 5px;
 }
 
-.tool button{
+.tool button {
     width: 100%;
     margin-top: 5px;
     background-color: white;
@@ -52,7 +67,10 @@ html, body {
     font-weight: bold;
 }
 
+.tool.chosen button {
+    background-color: dodgerblue;
+}
+
 .tool button:hover {
     cursor: pointer;
 }
-
