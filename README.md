@@ -17,4 +17,5 @@ and simple brushes.
 2. When it comes to programming I love technically complex software that is either user facing, is
     involved in art in some way, or a combination of the two.
     Examples include Digital Software Workstations (DAWs), Virtual Studio Technology apps (VSTs),
-    drawing applications, emulators, and websites (when they're made well).
+    drawing applications, emulators, and websites (when they're made well). I was curious as to how
+    drawing applications work, so I took the plunge.
