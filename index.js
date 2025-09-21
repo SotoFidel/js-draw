@@ -1,4 +1,3 @@
-// const canvas = document.getElementById("canvas");
 let canvas;
 let toolCanvas;
 const canvasContainer = document.getElementById("canvasContainer");
@@ -11,13 +10,15 @@ let canvasOffsetY = 0;
 let changeStack = [];
 let redoStack = [];
 let oldCoords = { x: 0, y: 0 }
-let newCoords = { x: 0, y: 0 }
+let currentCoords = { x: 0, y: 0 }
 let prevImageData;
 let color = "#000000";
+let alphaColor = "#00000000";
 
 let modes = {
-    Drawing: { mode: "Drawing", fn: draw, strokeWidth: 10 },
-    Erasing: { mode: "Erasing", fn: erase, strokeWidth: 10 }
+    Drawing: { mode: "Drawing", fn: draw, strokeWidth: 5, buttonId: "draw-btn", mouseUpdate: true },
+    Erasing: { mode: "Erasing", fn: erase, strokeWidth: 5, buttonId: "erase-btn", mouseUpdate: true },
+    Filling: { mode: "Filling", fn: bucketFill, buttonId: "fill-btn", mouseUpdate: false, fnParams: null }
 };
 
 let currentMode = modes.Drawing;
@@ -31,13 +32,13 @@ function draw() {
     toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
     toolContext.beginPath();
     // tctx.rect(newCoords.x, newCoords.y, currentMode.strokeWidth, currentMode.strokeWidth);
-    toolContext.arc(Math.max(newCoords.x, 0),
-        Math.max(newCoords.y, 0), currentMode.strokeWidth, 0, 2 * Math.PI);
+    toolContext.arc(Math.max(currentCoords.x, 0),
+        Math.max(currentCoords.y, 0), currentMode.strokeWidth, 0, 2 * Math.PI);
     toolContext.stroke();
 
     if (isClicking) {
         for (let i = 0; i <= 1; i += .01) {
-            nc = interpolate(oldCoords, newCoords, i);
+            nc = interpolate(oldCoords, currentCoords, i);
             canvasContext.beginPath();
             canvasContext.arc(Math.max(nc.x, 0),
                 Math.max(nc.y, 0), currentMode.strokeWidth, 0, 2 * Math.PI);
@@ -53,8 +54,8 @@ function erase() {
     toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
     toolContext.beginPath();
     toolContext.rect(
-        Math.max(newCoords.x - (currentMode.strokeWidth / 2), 0),
-        Math.max(newCoords.y - (currentMode.strokeWidth / 2), 0),
+        Math.max(currentCoords.x - (currentMode.strokeWidth / 2), 0),
+        Math.max(currentCoords.y - (currentMode.strokeWidth / 2), 0),
         currentMode.strokeWidth,
         currentMode.strokeWidth);
     toolContext.stroke();
@@ -62,8 +63,13 @@ function erase() {
         let nc;
         // console.log("erase ", oldCoords, newCoords);
         for (let i = 0; i <= 1; i += .05) {
-            nc = interpolate(oldCoords, newCoords, i);
-            canvasContext.clearRect(Math.max(nc.x - (currentMode.strokeWidth / 2), 0), Math.max(nc.y - (currentMode.strokeWidth / 2), 0), currentMode.strokeWidth, currentMode.strokeWidth);
+            nc = interpolate(oldCoords, currentCoords, i);
+            canvasContext.clearRect(
+                Math.max(nc.x - (currentMode.strokeWidth / 2), 0),
+                Math.max(nc.y - (currentMode.strokeWidth / 2), 0),
+                currentMode.strokeWidth,
+                currentMode.strokeWidth
+            );
         }
         // ctx.clearRect(Math.max(newCoords.x - 5, 0), Math.max(newCoords.y - 5, 0), 10, 10);
     }
@@ -80,7 +86,87 @@ function exportImage() {
 }
 
 function bucketFill() {
+    const sourceColor = getPixelColor(currentMode.fnParams.x, currentMode.fnParams.y);
+    // const sourceColor = '#00000000';
+    canvasContext.strokeStyle = alphaColor;
+    canvasContext.fillStyle = alphaColor;
 
+    let pixelStack = [];
+    let currentPixel;
+    pixelStack.push({
+        // x: 350,
+        // y: 350
+        // x: currentCoords.x,
+        // y: currentCoords.y
+        x: currentMode.fnParams.x,
+        y: currentMode.fnParams.y
+    });
+
+    console.log("started pixelStack with ", pixelStack);
+    let mew = [];
+    mew.push({ x: Math.round(currentCoords.x), y: Math.round(currentCoords.y) });
+    console.log("as opposed to ", mew);
+
+    while (pixelStack.length != 0) {
+        currentPixel = pixelStack.pop();
+        console.log("continuing");
+        // console.log(currentPixel);
+        // console.log("evaluating ", currentPixel);
+        let leftMostX = currentPixel.x;
+
+        // while (getPixelColor(leftMostX - 1, currentPixel.y) == sourceColor) {
+        while (isInside(leftMostX - 1, currentPixel.y, sourceColor)) {
+            setPixelColor(leftMostX - 1, currentPixel.y, alphaColor);
+            leftMostX--;
+        }
+
+        // while (getPixelColor(currentPixel.x, currentPixel.y) == sourceColor) {
+        while (isInside(currentPixel.x, currentPixel.y, sourceColor)) {
+            setPixelColor(currentPixel.x, currentPixel.y, alphaColor);
+            currentPixel.x++;
+        }
+
+        scan(leftMostX, currentPixel.x - 1, currentPixel.y + 1);
+        scan(leftMostX, currentPixel.x - 1, currentPixel.y - 1);
+
+    }
+
+    function isInside(x, y, color) {
+        return (x > 0 && x < canvas.width)
+            && (y > 0 && y < canvas.height)
+            && getPixelColor(x, y) == color;
+    }
+
+    function scan(leftMostX, rightMostX, y) {
+        // let spanAdded = false;
+        for (let i = leftMostX; i <= rightMostX; i++) {
+            // if (getPixelColor(i, y) == sourceColor) {
+            if (isInside(i, y, sourceColor)) {
+                pixelStack.push({ x: i, y: y });
+            }
+            // if (getPixelColor(i, y) != sourceColor) {
+            //     spanAdded = false;
+            // } else if (!spanAdded) {
+            //     pixelStack.push({ x: i, y: y });
+            //     spanAdded = true;
+            // }
+        }
+    }
+
+    function getPixelColor(x, y) {
+        let pixel = canvasContext.getImageData(x, y, 1, 1);
+        let hexRgb = `#${pixel.data[0].toString(16).padStart(2, '0')}`
+            + `${pixel.data[1].toString(16).padStart(2, '0')}`
+            + `${pixel.data[2].toString(16).padStart(2, '0')}`
+            + `${pixel.data[3].toString(16).padStart(2, '0')}`;
+        // console.log(hexRgb);
+        return hexRgb;
+    }
+
+    function setPixelColor(x, y) {
+        canvasContext.fillRect(x, y, 1, 1);
+        // canvasContext.fill();
+    }
 }
 
 // points A and B, frac between 0 and 1
@@ -108,22 +194,23 @@ function undoAction() {
 
 function setMethod(method) {
     toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
-    modes[currentMode.mode].strokeWidth = currentMode.strokeWidth;
+    modes[currentMode.mode].strokeWidth = currentMode.strokeWidth || 0;
     currentMode = modes[method];
-    document.querySelector("#size").value = currentMode.strokeWidth;
-    document.querySelector("#sizeVal").value = currentMode.strokeWidth;
-    switch (method) {
-        case "Drawing":
-            document.querySelector('.tool:has(#erase-btn)').classList.remove('chosen');
-            document.querySelector('.tool:has(#draw-btn)').classList.add('chosen');
-            break;
-        case "Erasing":
-            document.querySelector('.tool:has(#draw-btn)').classList.remove('chosen');
-            document.querySelector('.tool:has(#erase-btn)').classList.add('chosen');
-            break;
-        default:
-            break;
+    document.querySelector("#size").value = currentMode.strokeWidth || 0;
+    document.querySelector("#sizeVal").value = currentMode.strokeWidth || 0;
+    if (method == modes.Filling.mode) {
+        document.querySelector("#size").disabled = true;
+        document.querySelector("#sizeVal").disabled = true;
+    } else {
+        document.querySelector("#size").disabled = false;
+        document.querySelector("#sizeVal").disabled = false;
     }
+
+    document.querySelectorAll('.tool:has(button)').forEach((btn) => {
+        btn.classList.remove('chosen');
+    });
+    document.querySelector(`.tool:has(#${currentMode.buttonId})`).classList.add('chosen');
+
 }
 
 
@@ -164,6 +251,12 @@ function setupCanvasEvents() {
         if (event.buttons == 1) {
             redoStack = [];
             isClicking = true;
+            if (currentMode.mode == "Filling") {
+                // TODO: for some reason, making the bucketfill method use currentCoords for its starting coordinates causes
+                // the fill algorithm to bug out, which forces me to use this edge case check. Find a way to not make this 
+                // soo clunky. We can try higher order functions or removing the mousemove event listener.
+                currentMode.fnParams = { x: event.x, y: event.y };
+            }
             currentMode.fn();
         }
     });
@@ -181,10 +274,16 @@ function setupCanvasEvents() {
 
 
     canvas.addEventListener("mousemove", (event) => {
-        oldCoords = newCoords;
-        newCoords = { x: event.x - canvasOffsetX, y: event.y - canvasOffsetY };
+        oldCoords = currentCoords;
+        currentCoords = {
+            x: Math.max(event.x - canvasOffsetX, 0),
+            y: Math.max(event.y - canvasOffsetY, 0)
+        };
+        console.log(currentCoords);
 
-        currentMode.fn();
+        if (currentMode.mouseUpdate) {
+            currentMode.fn();
+        }
     });
 
     addEventListener("keydown", (event) => {
@@ -243,6 +342,9 @@ function setupUiEvents() {
 
     document.querySelector("#colorPicker").addEventListener("change", (event) => {
         color = event.target.value;
+        alphaColor = `${color}ff`;
+        console.log("new color ", color);
+        console.log("new color ", alphaColor);
     });
 
 }
