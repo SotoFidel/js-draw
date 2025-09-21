@@ -86,71 +86,81 @@ function exportImage() {
 }
 
 function bucketFill() {
-    const sourceColor = getPixelColor(currentMode.fnParams.x, currentMode.fnParams.y);
-    // const sourceColor = '#00000000';
+    // const sourceColor = getPixelColor(currentMode.fnParams.x, currentMode.fnParams.y);
+    const sourceColor = '#00000000';
     canvasContext.strokeStyle = alphaColor;
     canvasContext.fillStyle = alphaColor;
 
     let pixelStack = [];
     let currentPixel;
-    pixelStack.push({
-        // x: 350,
-        // y: 350
-        // x: currentCoords.x,
-        // y: currentCoords.y
-        x: currentMode.fnParams.x,
-        y: currentMode.fnParams.y
-    });
+    pixelStack.push(
+        {
+            x1: currentMode.fnParams.x,
+            x2: currentMode.fnParams.x,
+            y: currentMode.fnParams.y,
+            dy: 1
+        });
+    pixelStack.push(
+        {
+            x1: currentMode.fnParams.x,
+            x2: currentMode.fnParams.x,
+            y: currentMode.fnParams.y - 1,
+            dy: -1
+        });
 
-    console.log("started pixelStack with ", pixelStack);
-    let mew = [];
-    mew.push({ x: Math.round(currentCoords.x), y: Math.round(currentCoords.y) });
-    console.log("as opposed to ", mew);
-
-    while (pixelStack.length != 0) {
+    while (pixelStack.length > 0) {
+        console.log("working...");
         currentPixel = pixelStack.pop();
-        console.log("continuing");
-        // console.log(currentPixel);
-        // console.log("evaluating ", currentPixel);
-        let leftMostX = currentPixel.x;
-
-        // while (getPixelColor(leftMostX - 1, currentPixel.y) == sourceColor) {
-        while (isInside(leftMostX - 1, currentPixel.y, sourceColor)) {
-            setPixelColor(leftMostX - 1, currentPixel.y, alphaColor);
-            leftMostX--;
+        let x = currentPixel.x1;
+        if (isInside(x, currentPixel.y, sourceColor)) {
+            while (isInside(x - 1, currentPixel.y, sourceColor)) {
+                setPixelColor(x - 1, currentPixel.y);
+                x--;
+            }
+            if (x < currentPixel.x1) {
+                pixelStack.push({
+                    x1: x,
+                    x2: currentPixel.x1 - 1,
+                    y: currentPixel.y - currentPixel.dy,
+                    dy: -currentPixel.dy
+                });
+            }
         }
-
-        // while (getPixelColor(currentPixel.x, currentPixel.y) == sourceColor) {
-        while (isInside(currentPixel.x, currentPixel.y, sourceColor)) {
-            setPixelColor(currentPixel.x, currentPixel.y, alphaColor);
-            currentPixel.x++;
+        while (currentPixel.x1 <= currentPixel.x2) {
+            while (isInside(currentPixel.x1, currentPixel.y, sourceColor)) {
+                setPixelColor(currentPixel.x1, currentPixel.y);
+                currentPixel.x1++;
+            }
+            if (currentPixel.x1 > x) {
+                pixelStack.push({
+                    x1: x,
+                    x2: currentPixel.x1 - 1,
+                    y: currentPixel.y + currentPixel.dy,
+                    dy: currentPixel.dy
+                });
+            }
+            if (currentPixel.x1 - 1 > currentPixel.x2) {
+                pixelStack.push({
+                    x1: currentPixel.x2 + 1,
+                    x2: currentPixel.x1 - 1,
+                    y: currentPixel.y - currentPixel.dy,
+                    dy: -currentPixel.dy
+                });
+            }
+            currentPixel.x1++;
+            while (currentPixel.x1 < currentPixel.x2 && !isInside(currentPixel.x1, currentPixel.y, sourceColor)) {
+                currentPixel.x1++;
+            }
+            x = currentPixel.x1;
         }
-
-        scan(leftMostX, currentPixel.x - 1, currentPixel.y + 1);
-        scan(leftMostX, currentPixel.x - 1, currentPixel.y - 1);
-
     }
+
+    console.log("done");
 
     function isInside(x, y, color) {
-        return (x > 0 && x < canvas.width)
-            && (y > 0 && y < canvas.height)
+        return (x >= 0 && x < canvas.width)
+            && (y >= 0 && y < canvas.height)
             && getPixelColor(x, y) == color;
-    }
-
-    function scan(leftMostX, rightMostX, y) {
-        // let spanAdded = false;
-        for (let i = leftMostX; i <= rightMostX; i++) {
-            // if (getPixelColor(i, y) == sourceColor) {
-            if (isInside(i, y, sourceColor)) {
-                pixelStack.push({ x: i, y: y });
-            }
-            // if (getPixelColor(i, y) != sourceColor) {
-            //     spanAdded = false;
-            // } else if (!spanAdded) {
-            //     pixelStack.push({ x: i, y: y });
-            //     spanAdded = true;
-            // }
-        }
     }
 
     function getPixelColor(x, y) {

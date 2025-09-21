@@ -3,7 +3,7 @@ body {
     height: 100%;
     margin: 0px;
     font-family: system-ui, sans-serif;
-    /* overflow: hidden; */
+    overflow: hidden;
 }
 
 canvas {
