@@ -19,17 +19,16 @@ canvas {
 }
 
 #sidebar {
-    background-color: gainsboro;
+    background-color: #323232;
     display: flex;
     flex-direction: column;
     padding: 10px;
-    border-right: 2px solid black;
+    border-top: 2px solid gainsboro;
     min-width: 75px;
 
     #colorPicker {
-        background-color: gainsboro;
-        border: 2px solid black;
-        border-radius: 5px;
+        background-color: white;
+        border: 2px solid gainsboro;
         height: 50px;
         width: 100%;
     }
@@ -42,33 +41,35 @@ canvas {
 }
 
 #ribbon {
-    background-color: gainsboro;
-    border-bottom: 2px solid black;
+    background-color: #323232;
+    border: 0;
     padding: 10px;
+    color: gainsboro;
 
     #size {
         width: 300px;
+        accent-color: royalblue;
     }
 }
 
 #sizeVal {
     background-color: gainsboro;
     width: 50px;
-    border: 2px solid black;
-    border-radius: 5px;
+    border: 2px solid gainsboro;
+    padding: 0;
 }
 
 .tool button {
     width: 100%;
     margin-top: 5px;
-    background-color: white;
-    border: 2px solid black;
-    border-radius: 5px;
+    background-color: #474750;
+    border: 2px solid gainsboro;
     font-weight: bold;
+    color: white;
 }
 
 .tool.chosen button {
-    background-color: dodgerblue;
+    background-color: royalblue;
 }
 
 .tool button:hover {
