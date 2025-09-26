@@ -9,360 +9,438 @@ let canvasOffsetX = 0;
 let canvasOffsetY = 0;
 let changeStack = [];
 let redoStack = [];
-let oldCoords = { x: 0, y: 0 }
-let currentCoords = { x: 0, y: 0 }
+let oldCoords = { x: 0, y: 0 };
+let currentCoords = { x: 0, y: 0 };
 let prevImageData;
 let color = "#000000";
 let alphaColor = "#00000000";
 
 let modes = {
-    Drawing: { mode: "Drawing", fn: draw, strokeWidth: 5, buttonId: "draw-btn", mouseUpdate: true },
-    Erasing: { mode: "Erasing", fn: erase, strokeWidth: 5, buttonId: "erase-btn", mouseUpdate: true },
-    Filling: { mode: "Filling", fn: bucketFill, buttonId: "fill-btn", mouseUpdate: false, fnParams: null }
+  Drawing: {
+    mode: "Drawing",
+    fn: draw,
+    strokeWidth: 5,
+    buttonId: "draw-btn",
+    mouseUpdate: true,
+  },
+  Erasing: {
+    mode: "Erasing",
+    fn: erase,
+    strokeWidth: 5,
+    buttonId: "erase-btn",
+    mouseUpdate: true,
+  },
+  Filling: {
+    mode: "Filling",
+    fn: bucketFill,
+    buttonId: "fill-btn",
+    mouseUpdate: false,
+    fnParams: null,
+  },
 };
 
 let currentMode = modes.Drawing;
 
 function clearCanvas() {
-    canvasContext.clearRect(0, 0, canvas.width, canvas.height);
+  canvasContext.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 function draw() {
+  toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+  toolContext.beginPath();
+  // tctx.rect(newCoords.x, newCoords.y, currentMode.strokeWidth, currentMode.strokeWidth);
+  toolContext.arc(
+    Math.max(currentCoords.x, 0),
+    Math.max(currentCoords.y, 0),
+    currentMode.strokeWidth,
+    0,
+    2 * Math.PI,
+  );
+  toolContext.stroke();
 
-    toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
-    toolContext.beginPath();
-    // tctx.rect(newCoords.x, newCoords.y, currentMode.strokeWidth, currentMode.strokeWidth);
-    toolContext.arc(Math.max(currentCoords.x, 0),
-        Math.max(currentCoords.y, 0), currentMode.strokeWidth, 0, 2 * Math.PI);
-    toolContext.stroke();
-
-    if (isClicking) {
-        for (let i = 0; i <= 1; i += .01) {
-            nc = interpolate(oldCoords, currentCoords, i);
-            canvasContext.beginPath();
-            canvasContext.arc(Math.max(nc.x, 0),
-                Math.max(nc.y, 0), currentMode.strokeWidth, 0, 2 * Math.PI);
-            canvasContext.strokeStyle = color;
-            canvasContext.fillStyle = color;
-            canvasContext.fill();
-            canvasContext.stroke();
-        }
+  if (isClicking) {
+    canvasContext.beginPath();
+    for (let i = 0; i <= 1; i += 0.05) {
+      nc = interpolate(oldCoords, currentCoords, i);
+      canvasContext.arc(
+        Math.max(nc.x, 0),
+        Math.max(nc.y, 0),
+        currentMode.strokeWidth,
+        0,
+        2 * Math.PI,
+      );
+      // canvasContext.stroke();
     }
+    canvasContext.strokeStyle = "#00000000";
+    canvasContext.fillStyle = color;
+    canvasContext.fill();
+  }
 }
 
 function erase() {
-    toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
-    toolContext.beginPath();
-    toolContext.rect(
-        Math.max(currentCoords.x - (currentMode.strokeWidth / 2), 0),
-        Math.max(currentCoords.y - (currentMode.strokeWidth / 2), 0),
+  toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+  toolContext.beginPath();
+  toolContext.rect(
+    Math.max(currentCoords.x - currentMode.strokeWidth / 2, 0),
+    Math.max(currentCoords.y - currentMode.strokeWidth / 2, 0),
+    currentMode.strokeWidth,
+    currentMode.strokeWidth,
+  );
+  toolContext.stroke();
+  if (isClicking) {
+    let nc;
+    // console.log("erase ", oldCoords, newCoords);
+    for (let i = 0; i <= 1; i += 0.05) {
+      nc = interpolate(oldCoords, currentCoords, i);
+      canvasContext.clearRect(
+        Math.max(nc.x - currentMode.strokeWidth / 2, 0),
+        Math.max(nc.y - currentMode.strokeWidth / 2, 0),
         currentMode.strokeWidth,
-        currentMode.strokeWidth);
-    toolContext.stroke();
-    if (isClicking) {
-        let nc;
-        // console.log("erase ", oldCoords, newCoords);
-        for (let i = 0; i <= 1; i += .05) {
-            nc = interpolate(oldCoords, currentCoords, i);
-            canvasContext.clearRect(
-                Math.max(nc.x - (currentMode.strokeWidth / 2), 0),
-                Math.max(nc.y - (currentMode.strokeWidth / 2), 0),
-                currentMode.strokeWidth,
-                currentMode.strokeWidth
-            );
-        }
-        // ctx.clearRect(Math.max(newCoords.x - 5, 0), Math.max(newCoords.y - 5, 0), 10, 10);
+        currentMode.strokeWidth,
+      );
     }
+    // ctx.clearRect(Math.max(newCoords.x - 5, 0), Math.max(newCoords.y - 5, 0), 10, 10);
+  }
 }
 
 function exportImage() {
-    let tempAnchor = document.createElement('a');
-    let imageUrl = canvas.toDataURL("image/png");
-    tempAnchor.href = imageUrl;
-    tempAnchor.download = "exportedImage";
-    document.querySelector('#ribbon').appendChild(tempAnchor);
-    tempAnchor.click();
-    document.querySelector('#ribbon').removeChild(tempAnchor);
+  let tempAnchor = document.createElement("a");
+  let imageUrl = canvas.toDataURL("image/png");
+  tempAnchor.href = imageUrl;
+  tempAnchor.download = "exportedImage";
+  document.querySelector("#ribbon").appendChild(tempAnchor);
+  tempAnchor.click();
+  document.querySelector("#ribbon").removeChild(tempAnchor);
 }
 
 function bucketFill() {
-    // const sourceColor = getPixelColor(currentMode.fnParams.x, currentMode.fnParams.y);
-    const sourceColor = '#00000000';
-    canvasContext.strokeStyle = alphaColor;
-    canvasContext.fillStyle = alphaColor;
+  const sourceColor = getPixelColor(
+    currentMode.fnParams.x,
+    currentMode.fnParams.y,
+  );
 
-    let pixelStack = [];
-    let currentPixel;
-    pixelStack.push(
-        {
-            x1: currentMode.fnParams.x,
-            x2: currentMode.fnParams.x,
-            y: currentMode.fnParams.y,
-            dy: 1
+  canvasContext.strokeStyle = alphaColor;
+  canvasContext.fillStyle = alphaColor;
+
+  let pixelStack = [];
+  let currentPixel;
+  let validColors = [];
+  let invalidColors = [];
+  invalidColors.push(color);
+
+  if (!isInside(currentMode.fnParams.x, currentMode.fnParams.y, sourceColor)) {
+    console.log("alarm!!!");
+    return;
+  }
+  pixelStack.push({
+    x1: currentMode.fnParams.x,
+    x2: currentMode.fnParams.x,
+    y: currentMode.fnParams.y,
+    dy: 1,
+  });
+  pixelStack.push({
+    x1: currentMode.fnParams.x,
+    x2: currentMode.fnParams.x,
+    y: currentMode.fnParams.y - 1,
+    dy: -1,
+  });
+
+  while (pixelStack.length > 0) {
+    console.log("working...");
+    currentPixel = pixelStack.pop();
+    let x = currentPixel.x1;
+    if (isInside(x, currentPixel.y, sourceColor)) {
+      while (isInside(x - 1, currentPixel.y, sourceColor)) {
+        setPixelColor(x - 1, currentPixel.y);
+        x--;
+      }
+      if (x < currentPixel.x1) {
+        pixelStack.push({
+          x1: x,
+          x2: currentPixel.x1 - 1,
+          y: currentPixel.y - currentPixel.dy,
+          dy: -currentPixel.dy,
         });
-    pixelStack.push(
-        {
-            x1: currentMode.fnParams.x,
-            x2: currentMode.fnParams.x,
-            y: currentMode.fnParams.y - 1,
-            dy: -1
+      }
+    }
+    while (currentPixel.x1 <= currentPixel.x2) {
+      while (isInside(currentPixel.x1, currentPixel.y, sourceColor)) {
+        setPixelColor(currentPixel.x1, currentPixel.y);
+        currentPixel.x1++;
+      }
+      if (currentPixel.x1 > x) {
+        pixelStack.push({
+          x1: x,
+          x2: currentPixel.x1 - 1,
+          y: currentPixel.y + currentPixel.dy,
+          dy: currentPixel.dy,
         });
+      }
+      if (currentPixel.x1 - 1 > currentPixel.x2) {
+        pixelStack.push({
+          x1: currentPixel.x2 + 1,
+          x2: currentPixel.x1 - 1,
+          y: currentPixel.y - currentPixel.dy,
+          dy: -currentPixel.dy,
+        });
+      }
+      currentPixel.x1++;
+      while (
+        currentPixel.x1 < currentPixel.x2 &&
+        !isInside(currentPixel.x1, currentPixel.y, sourceColor)
+      ) {
+        currentPixel.x1++;
+      }
+      x = currentPixel.x1;
+    }
+  }
 
-    while (pixelStack.length > 0) {
-        console.log("working...");
-        currentPixel = pixelStack.pop();
-        let x = currentPixel.x1;
-        if (isInside(x, currentPixel.y, sourceColor)) {
-            while (isInside(x - 1, currentPixel.y, sourceColor)) {
-                setPixelColor(x - 1, currentPixel.y);
-                x--;
-            }
-            if (x < currentPixel.x1) {
-                pixelStack.push({
-                    x1: x,
-                    x2: currentPixel.x1 - 1,
-                    y: currentPixel.y - currentPixel.dy,
-                    dy: -currentPixel.dy
-                });
-            }
-        }
-        while (currentPixel.x1 <= currentPixel.x2) {
-            while (isInside(currentPixel.x1, currentPixel.y, sourceColor)) {
-                setPixelColor(currentPixel.x1, currentPixel.y);
-                currentPixel.x1++;
-            }
-            if (currentPixel.x1 > x) {
-                pixelStack.push({
-                    x1: x,
-                    x2: currentPixel.x1 - 1,
-                    y: currentPixel.y + currentPixel.dy,
-                    dy: currentPixel.dy
-                });
-            }
-            if (currentPixel.x1 - 1 > currentPixel.x2) {
-                pixelStack.push({
-                    x1: currentPixel.x2 + 1,
-                    x2: currentPixel.x1 - 1,
-                    y: currentPixel.y - currentPixel.dy,
-                    dy: -currentPixel.dy
-                });
-            }
-            currentPixel.x1++;
-            while (currentPixel.x1 < currentPixel.x2 && !isInside(currentPixel.x1, currentPixel.y, sourceColor)) {
-                currentPixel.x1++;
-            }
-            x = currentPixel.x1;
-        }
+  function isInside(x, y, color) {
+    if (validColors.includes(color)) {
+      return x >= 0 && x < canvas.width && y >= 0 && y < canvas.height;
+    }
+    if (invalidColors.includes(color)) {
+      return false;
     }
 
-    console.log("done");
+    let rdiff, gdiff, bdiff;
+    let currentPixel = getPixelColor(x, y, "rgb");
+    let colorRgb = hexToRgb(color);
 
-    function isInside(x, y, color) {
-        return (x >= 0 && x < canvas.width)
-            && (y >= 0 && y < canvas.height)
-            && getPixelColor(x, y) == color;
-    }
+    rdiff = Math.abs(colorRgb[0] - currentPixel[0]);
+    gdiff = Math.abs(colorRgb[1] - currentPixel[1]);
+    bdiff = Math.abs(colorRgb[2] - currentPixel[2]);
 
-    function getPixelColor(x, y) {
-        let pixel = canvasContext.getImageData(x, y, 1, 1);
-        let hexRgb = `#${pixel.data[0].toString(16).padStart(2, '0')}`
-            + `${pixel.data[1].toString(16).padStart(2, '0')}`
-            + `${pixel.data[2].toString(16).padStart(2, '0')}`
-            + `${pixel.data[3].toString(16).padStart(2, '0')}`;
-        // console.log(hexRgb);
-        return hexRgb;
-    }
+    let valid = rdiff <= 5 && gdiff <= 5 && bdiff <= 5;
+    // if (valid) { validColors.push(color); }
+    // else { invalidColors.push(color); }
 
-    function setPixelColor(x, y) {
-        canvasContext.fillRect(x, y, 1, 1);
-        // canvasContext.fill();
+    return x >= 0 && x < canvas.width && y >= 0 && y < canvas.height && valid;
+  }
+
+  function getPixelColor(x, y, format = "hex") {
+    let pixel = canvasContext.getImageData(x, y, 1, 1);
+    if (format == "rgb") {
+      return [pixel.data[0], pixel.data[1], pixel.data[2]];
     }
+    return rgbToHex(pixel);
+  }
+
+  function rgbToHex(rgb) {
+    let hexRgb =
+      `#${rgb.data[0].toString(16).padStart(2, "0")}` +
+      `${rgb.data[1].toString(16).padStart(2, "0")}` +
+      `${rgb.data[2].toString(16).padStart(2, "0")}`;
+
+    return hexRgb;
+  }
+
+  function hexToRgb(hex) {
+    return hex
+      .slice(1)
+      .match(/../g)
+      .map((i) => {
+        return parseInt(i, 16);
+      });
+  }
+
+  function setPixelColor(x, y) {
+    canvasContext.fillRect(x, y, 1, 1);
+  }
 }
 
 // points A and B, frac between 0 and 1
 function interpolate(a, b, t) {
-    var nx = a.x + (b.x - a.x) * t;
-    var ny = a.y + (b.y - a.y) * t;
-    return { x: nx, y: ny };
+  var nx = a.x + (b.x - a.x) * t;
+  var ny = a.y + (b.y - a.y) * t;
+  return { x: nx, y: ny };
 }
 
 function redoAction() {
-    if (redoStack.length > 0) {
-        canvasContext.putImageData(redoStack.pop(), 0, 0);
-    }
+  if (redoStack.length > 0) {
+    canvasContext.putImageData(redoStack.pop(), 0, 0);
+  }
 }
 
 function undoAction() {
-    if (changeStack.length > 1) {
-        redoStack.push(changeStack.pop());
-        canvasContext.putImageData(changeStack[changeStack.length - 1], 0, 0);
-    } else if (changeStack.length == 1) {
-        canvasContext.putImageData(changeStack[0], 0, 0);
-        redoStack.push(changeStack.pop());
-    }
+  if (changeStack.length > 1) {
+    redoStack.push(changeStack.pop());
+    canvasContext.putImageData(changeStack[changeStack.length - 1], 0, 0);
+  } else if (changeStack.length == 1) {
+    canvasContext.putImageData(changeStack[0], 0, 0);
+    redoStack.push(changeStack.pop());
+  }
 }
 
 function setMethod(method) {
-    toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
-    modes[currentMode.mode].strokeWidth = currentMode.strokeWidth || 0;
-    currentMode = modes[method];
-    document.querySelector("#size").value = currentMode.strokeWidth || 0;
-    document.querySelector("#sizeVal").value = currentMode.strokeWidth || 0;
-    if (method == modes.Filling.mode) {
-        document.querySelector("#size").disabled = true;
-        document.querySelector("#sizeVal").disabled = true;
-    } else {
-        document.querySelector("#size").disabled = false;
-        document.querySelector("#sizeVal").disabled = false;
-    }
+  toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+  modes[currentMode.mode].strokeWidth = currentMode.strokeWidth || 0;
+  currentMode = modes[method];
+  document.querySelector("#size").value = currentMode.strokeWidth || 0;
+  document.querySelector("#sizeVal").value = currentMode.strokeWidth || 0;
+  if (method == modes.Filling.mode) {
+    document.querySelector("#size").disabled = true;
+    document.querySelector("#sizeVal").disabled = true;
+  } else {
+    document.querySelector("#size").disabled = false;
+    document.querySelector("#sizeVal").disabled = false;
+  }
 
-    document.querySelectorAll('.tool:has(button)').forEach((btn) => {
-        btn.classList.remove('chosen');
-    });
-    document.querySelector(`.tool:has(#${currentMode.buttonId})`).classList.add('chosen');
-
+  document.querySelectorAll(".tool:has(button)").forEach((btn) => {
+    btn.classList.remove("chosen");
+  });
+  document
+    .querySelector(`.tool:has(#${currentMode.buttonId})`)
+    .classList.add("chosen");
 }
 
-
 function calculateOffsets() {
-    canvasOffsetX = canvas.getBoundingClientRect().x;
-    canvasOffsetY = canvas.getBoundingClientRect().y;
+  canvasOffsetX = canvas.getBoundingClientRect().x;
+  canvasOffsetY = canvas.getBoundingClientRect().y;
 }
 
 function createCanvas() {
-    let canvasContainerRect = canvasContainer.getBoundingClientRect();
+  let canvasContainerRect = canvasContainer.getBoundingClientRect();
 
-    canvas = document.createElement("canvas");
-    canvas.setAttribute("id", "canvas");
-    canvas.setAttribute("width", `${canvasContainerRect.width}`);
-    canvas.setAttribute("height", `${canvasContainerRect.height}`);
+  canvas = document.createElement("canvas");
+  canvas.setAttribute("id", "canvas");
+  canvas.setAttribute("width", `${canvasContainerRect.width}`);
+  canvas.setAttribute("height", `${canvasContainerRect.height}`);
 
-    toolCanvas = document.createElement("canvas");
-    toolCanvas.setAttribute("id", "toolLayer");
-    toolCanvas.setAttribute("width", `${canvasContainerRect.width}`);
-    toolCanvas.setAttribute("height", `${canvasContainerRect.height}`);
+  toolCanvas = document.createElement("canvas");
+  toolCanvas.setAttribute("id", "toolLayer");
+  toolCanvas.setAttribute("width", `${canvasContainerRect.width}`);
+  toolCanvas.setAttribute("height", `${canvasContainerRect.height}`);
 
-    canvasContainer.replaceWith(canvas);
-    canvas.after(toolCanvas);
-    canvasContext = canvas.getContext("2d", { willReadFrequently: true });
-    canvasContext.lineWidth = 0;
-    canvasContext.fillStyle = "black";
+  canvasContainer.replaceWith(canvas);
+  canvas.after(toolCanvas);
+  canvasContext = canvas.getContext("2d", { willReadFrequently: true });
+  canvasContext.lineWidth = 0;
+  canvasContext.fillStyle = "black";
 
-    toolContext = toolCanvas.getContext("2d", { willReadFrequently: true });
-    toolContext.lineWidth = 0;
-    toolContext.fillStyle = "black";
+  toolContext = toolCanvas.getContext("2d", { willReadFrequently: true });
+  toolContext.lineWidth = 0;
+  toolContext.fillStyle = "black";
 
-    changeStack.push(canvasContext.getImageData(0, 0, canvasContext.canvas.width, canvasContext.canvas.height));
+  changeStack.push(
+    canvasContext.getImageData(
+      0,
+      0,
+      canvasContext.canvas.width,
+      canvasContext.canvas.height,
+    ),
+  );
 }
 
 function setupCanvasEvents() {
-    canvas.addEventListener("mousedown", (event) => {
-        // left click to draw
-        if (event.buttons == 1) {
-            redoStack = [];
-            isClicking = true;
-            if (currentMode.mode == "Filling") {
-                // TODO: for some reason, making the bucketfill method use currentCoords for its starting coordinates causes
-                // the fill algorithm to bug out, which forces me to use this edge case check. Find a way to not make this 
-                // soo clunky. We can try higher order functions or removing the mousemove event listener.
-                currentMode.fnParams = { x: event.x, y: event.y };
-            }
-            currentMode.fn();
-        }
-    });
-
-
-    ["mouseup", "mouseleave"].forEach((eventType) => {
-        canvas.addEventListener(eventType, () => {
-            isClicking = false;
-            changeStack.push(canvasContext.getImageData(0, 0, canvasContext.canvas.width, canvasContext.canvas.height));
-            if (eventType == "mouseleave") {
-                toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
-            }
-        });
-    });
-
-
-    canvas.addEventListener("mousemove", (event) => {
-        oldCoords = currentCoords;
-        currentCoords = {
-            x: Math.max(event.x - canvasOffsetX, 0),
-            y: Math.max(event.y - canvasOffsetY, 0)
+  canvas.addEventListener("mousedown", (event) => {
+    // left click to draw
+    if (event.buttons == 1) {
+      redoStack = [];
+      isClicking = true;
+      if (currentMode.mode == "Filling") {
+        // TODO: for some reason, making the bucketfill method use currentCoords for its starting coordinates causes
+        // the fill algorithm to bug out, which forces me to use this edge case check. Find a way to not make this
+        // soo clunky. We can try higher order functions or removing the mousemove event listener.
+        currentMode.fnParams = {
+          x: Math.round(event.x - canvasOffsetX),
+          y: Math.round(event.y - canvasOffsetY),
         };
-        console.log(currentCoords);
+      }
+      currentMode.fn();
+    }
+  });
 
-        if (currentMode.mouseUpdate) {
-            currentMode.fn();
-        }
+  ["mouseup", "mouseleave"].forEach((eventType) => {
+    canvas.addEventListener(eventType, () => {
+      isClicking = false;
+      changeStack.push(
+        canvasContext.getImageData(
+          0,
+          0,
+          canvasContext.canvas.width,
+          canvasContext.canvas.height,
+        ),
+      );
+      if (eventType == "mouseleave") {
+        toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+      }
     });
+  });
 
-    addEventListener("keydown", (event) => {
-        // undo
-        if (event.ctrlKey && event.key == 'z') {
-            undoAction();
-        }
-        if (event.ctrlKey && event.shiftKey && event.key == 'Z') {
-            redoAction();
-        }
+  canvas.addEventListener("mousemove", (event) => {
+    oldCoords = currentCoords;
+    currentCoords = {
+      x: Math.max(event.x - canvasOffsetX, 0),
+      y: Math.max(event.y - canvasOffsetY, 0),
+    };
 
-    });
+    if (currentMode.mouseUpdate) {
+      currentMode.fn();
+    }
+  });
+
+  addEventListener("keydown", (event) => {
+    // undo
+    if (event.ctrlKey && event.key == "z") {
+      undoAction();
+    }
+    if (event.ctrlKey && event.shiftKey && event.key == "Z") {
+      redoAction();
+    }
+  });
 }
 
 function setupUiEvents() {
-    document.querySelector('.tool:has(#draw-btn)').classList.add('chosen');
-    let brushSizeInput = document.querySelector("#ribbon > input#size");
-    let brushSizeOutput = document.querySelector("#sizeVal");
+  document.querySelector(".tool:has(#draw-btn)").classList.add("chosen");
+  let brushSizeInput = document.querySelector("#ribbon > input#size");
+  let brushSizeOutput = document.querySelector("#sizeVal");
+  brushSizeOutput.value = brushSizeInput.value;
+
+  brushSizeInput.addEventListener("input", (event) => {
+    brushSizeOutput.value = event.target.value;
+    modes[currentMode.mode].strokeWidth = event.target.value;
+  });
+
+  brushSizeInput.addEventListener("wheel", (event) => {
+    if (event.deltaY < 0) {
+      brushSizeInput.stepUp(2);
+    } else {
+      brushSizeInput.stepDown(2);
+    }
     brushSizeOutput.value = brushSizeInput.value;
+    modes[currentMode.mode].strokeWidth = brushSizeInput.value;
+  });
 
-    brushSizeInput.addEventListener("input", (event) => {
-        brushSizeOutput.value = event.target.value;
-        modes[currentMode.mode].strokeWidth = event.target.value;
-    });
+  brushSizeOutput.addEventListener("change", (event) => {
+    if (event.target.value > 500) {
+      event.target.value = 500;
+    }
+    brushSizeInput.value = event.target.value;
+    modes[currentMode.mode].strokeWidth = event.target.value;
+  });
 
-    brushSizeInput.addEventListener("wheel", (event) => {
-        if (event.deltaY < 0) {
-            brushSizeInput.stepUp(2);
-        }
-        else {
-            brushSizeInput.stepDown(2);
-        }
-        brushSizeOutput.value = brushSizeInput.value;
-        modes[currentMode.mode].strokeWidth = brushSizeInput.value;
-    });
+  brushSizeOutput.addEventListener("wheel", (event) => {
+    if (event.deltaY < 0) {
+      brushSizeOutput.stepUp(2);
+    } else {
+      brushSizeOutput.stepDown(2);
+    }
+    brushSizeInput.value = brushSizeOutput.value;
+    modes[currentMode.mode].strokeWidth = brushSizeOutput.value;
+  });
 
-    brushSizeOutput.addEventListener("change", (event) => {
-        if (event.target.value > 500) {
-            event.target.value = 500;
-        }
-        brushSizeInput.value = event.target.value;
-        modes[currentMode.mode].strokeWidth = event.target.value;
-    });
-
-
-    brushSizeOutput.addEventListener("wheel", (event) => {
-        if (event.deltaY < 0) {
-            brushSizeOutput.stepUp(2);
-        }
-        else {
-            brushSizeOutput.stepDown(2);
-        }
-        brushSizeInput.value = brushSizeOutput.value;
-        modes[currentMode.mode].strokeWidth = brushSizeOutput.value;
-    });
-
-    document.querySelector("#colorPicker").addEventListener("change", (event) => {
-        color = event.target.value;
-        alphaColor = `${color}ff`;
-        console.log("new color ", color);
-        console.log("new color ", alphaColor);
-    });
-
+  document.querySelector("#colorPicker").addEventListener("change", (event) => {
+    color = event.target.value;
+    alphaColor = `${color}ff`;
+    console.log("new color ", color);
+    console.log("new color ", alphaColor);
+  });
 }
 
-window.onload = function() {
-    createCanvas();
-    calculateOffsets();
-    setupCanvasEvents();
-    setupUiEvents();
-}
-
+window.onload = function () {
+  createCanvas();
+  calculateOffsets();
+  setupCanvasEvents();
+  setupUiEvents();
+};
