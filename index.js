@@ -211,9 +211,7 @@ function bucketFill() {
     gdiff = Math.abs(colorRgb[1] - currentPixel[1]);
     bdiff = Math.abs(colorRgb[2] - currentPixel[2]);
 
-    let valid = rdiff <= 5 && gdiff <= 5 && bdiff <= 5;
-    // if (valid) { validColors.push(color); }
-    // else { invalidColors.push(color); }
+    let valid = rdiff <= 10 && gdiff <= 10 && bdiff <= 10;
 
     return x >= 0 && x < canvas.width && y >= 0 && y < canvas.height && valid;
   }
@@ -315,6 +313,8 @@ function createCanvas() {
   canvasContainer.replaceWith(canvas);
   canvas.after(toolCanvas);
   canvasContext = canvas.getContext("2d", { willReadFrequently: true });
+  canvasContext.fillStyle = "white";
+  canvasContext.fillRect(0, 0, canvas.width, canvas.height);
   canvasContext.lineWidth = 0;
   canvasContext.fillStyle = "black";
 
