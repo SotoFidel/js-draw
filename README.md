@@ -9,14 +9,17 @@ JS-Draw is currently capable of:
 - Erasing
 - Exporting Drawings (PNG)
 
-Features currently in progress: 
+Feature currently in progress: 
 - Simple shapes 
     - [ ] Triangle
     - [ ] Square
     - [ ] Circle
     - [ ] Star
 
+Planned features:
 - Simple brushes
+- Zoom
+- Layers
 
 ## Why was it made?
 1. I wanted to flex my "vanilla" javascript muscle. That is to say, I wanted to make
