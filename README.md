@@ -1,4 +1,7 @@
 # JS-Draw
+
+![js-draw demo gif](./assets/js-draw-demo.gif)
+
 ## What is it?
 JS-Draw is a simple drawing application written in js.
 
