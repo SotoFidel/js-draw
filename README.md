@@ -3,10 +3,20 @@
 JS-Draw is a simple drawing application written in js.
 
 ## What can it do?
-JS-Draw is currently capable of drawing, erasing, and exporting drawings.
+JS-Draw is currently capable of:
+- Drawing
+- Filling
+- Erasing
+- Exporting Drawings (PNG)
 
-<b>Features currently in progress</b>: Fill, simple shapes (triangle, square, circle, star),
-and simple brushes.
+Features currently in progress: 
+- Simple shapes 
+    - [ ] Triangle
+    - [ ] Square
+    - [ ] Circle
+    - [ ] Star
+
+- Simple brushes
 
 ## Why was it made?
 1. I wanted to flex my "vanilla" javascript muscle. That is to say, I wanted to make
