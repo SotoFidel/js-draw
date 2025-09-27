@@ -119,8 +119,8 @@ function bucketFill() {
     currentMode.fnParams.y,
   );
 
-  canvasContext.strokeStyle = alphaColor;
-  canvasContext.fillStyle = alphaColor;
+  canvasContext.strokeStyle = color;
+  canvasContext.fillStyle = color;
 
   let pixelStack = [];
   let currentPixel;
