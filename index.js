@@ -128,7 +128,7 @@ function bucketFill() {
   let invalidColors = [];
   invalidColors.push(color);
 
-  if (!isInside(currentMode.fnParams.x, currentMode.fnParams.y, sourceColor)) {
+  if (!isInside(currentMode.fnParams.x, currentMode.fnParams.y)) {
     console.log("alarm!!!");
     return;
   }
@@ -149,8 +149,8 @@ function bucketFill() {
     console.log("working...");
     currentPixel = pixelStack.pop();
     let x = currentPixel.x1;
-    if (isInside(x, currentPixel.y, sourceColor)) {
-      while (isInside(x - 1, currentPixel.y, sourceColor)) {
+    if (isInside(x, currentPixel.y)) {
+      while (isInside(x - 1, currentPixel.y)) {
         setPixelColor(x - 1, currentPixel.y);
         x--;
       }
@@ -164,7 +164,7 @@ function bucketFill() {
       }
     }
     while (currentPixel.x1 <= currentPixel.x2) {
-      while (isInside(currentPixel.x1, currentPixel.y, sourceColor)) {
+      while (isInside(currentPixel.x1, currentPixel.y)) {
         setPixelColor(currentPixel.x1, currentPixel.y);
         currentPixel.x1++;
       }
@@ -187,7 +187,7 @@ function bucketFill() {
       currentPixel.x1++;
       while (
         currentPixel.x1 < currentPixel.x2 &&
-        !isInside(currentPixel.x1, currentPixel.y, sourceColor)
+        !isInside(currentPixel.x1, currentPixel.y)
       ) {
         currentPixel.x1++;
       }
@@ -195,25 +195,38 @@ function bucketFill() {
     }
   }
 
-  function isInside(x, y, color) {
-    if (validColors.includes(color)) {
-      return x >= 0 && x < canvas.width && y >= 0 && y < canvas.height;
+  function isInside(x, y) {
+    let currentPixelHex = getPixelColor(x, y);
+    if (validColors.includes(currentPixelHex)) {
+      return true;
     }
-    if (invalidColors.includes(color)) {
+    if (invalidColors.includes(currentPixelHex)) {
       return false;
     }
-
+    let currentPixel = hexToRgb(currentPixelHex);
     let rdiff, gdiff, bdiff;
-    let currentPixel = getPixelColor(x, y, "rgb");
-    let colorRgb = hexToRgb(color);
+    let sourceColorRgb = hexToRgb(sourceColor);
 
-    rdiff = Math.abs(colorRgb[0] - currentPixel[0]);
-    gdiff = Math.abs(colorRgb[1] - currentPixel[1]);
-    bdiff = Math.abs(colorRgb[2] - currentPixel[2]);
+    rdiff = Math.abs(sourceColorRgb[0] - currentPixel[0]);
+    gdiff = Math.abs(sourceColorRgb[1] - currentPixel[1]);
+    bdiff = Math.abs(sourceColorRgb[2] - currentPixel[2]);
 
-    let valid = rdiff <= 10 && gdiff <= 10 && bdiff <= 10;
+    let valid =
+      rdiff <= 5 &&
+      gdiff <= 5 &&
+      bdiff <= 5 &&
+      x >= 0 &&
+      x < canvas.width &&
+      y >= 0 &&
+      y < canvas.height;
 
-    return x >= 0 && x < canvas.width && y >= 0 && y < canvas.height && valid;
+    if (valid) {
+      validColors.push(currentPixelHex);
+    } else {
+      invalidColors.push(currentPixelHex);
+    }
+
+    return valid;
   }
 
   function getPixelColor(x, y, format = "hex") {
