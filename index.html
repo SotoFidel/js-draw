@@ -29,29 +29,36 @@
           </div>
           <div class="tool">
             <button id="draw-btn" onclick="setMethod('Drawing')">Paint</button>
+            <div class="tooltip">[Key: b] - Paint on canvas with selected color</div>
           </div>
           <div class="tool">
             <button id="fill-btn" onclick="setMethod('Filling')">Fill</button>
+            <div class="tooltip">[Key: f] - Fill an area with selected color</div>
           </div>
           <div class="tool">
             <button id="fill-btn">Shapes [WIP]</button>
           </div>
           <div class="tool">
             <button id="erase-btn" onclick="setMethod('Erasing')">Erase</button>
+            <div class="tooltip">[Key: e] - Erase content</div>
           </div>
           <div class="tool">
             <button id="clear-btn" onclick="clearCanvas()">Clear</button>
+            <div class="tooltip">[Keys: ctrl+alt+c] - clear the canvas</div>
           </div>
           <hr style="color: gainsboro height:1px; width: 100%; background: gainsboro" />
           <div class="tool">
             <button id="undo-btn" onclick="undoAction()">Undo</button>
+            <div class="tooltip">[Keys: ctrl+z] - Undo the last action</div>
           </div>
           <div class="tool">
             <button id="redo-btn" onclick="redoAction()">Redo</button>
+            <div class="tooltip">[Keys: ctrl+shift+z] - Redo the last undone action</div>
           </div>
           <hr style="color: gainsboro height:1px; width: 100%; background: gainsboro" />
           <div class="tool">
             <button id="export-btn" onclick="exportImage()">Export</button>
+            <div class="tooltip">[Keys: ctrl+shift+e] - Export the canvas as a png</div>
           </div>
         </div>
         <div id="root" style="position:relative; width: 100%; height: 100%;">

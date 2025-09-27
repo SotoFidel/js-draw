@@ -42,7 +42,9 @@ let modes = {
 let currentMode = modes.Drawing;
 
 function clearCanvas() {
-  canvasContext.clearRect(0, 0, canvas.width, canvas.height);
+  canvasContext.fillStyle = "white";
+  canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+  canvasContext.fillStyle = color;
 }
 
 function draw() {
@@ -392,14 +394,46 @@ function setupCanvasEvents() {
       currentMode.fn();
     }
   });
+}
 
-  addEventListener("keydown", (event) => {
-    // undo
-    if (event.ctrlKey && event.key == "z") {
-      undoAction();
-    }
-    if (event.ctrlKey && event.shiftKey && event.key == "Z") {
-      redoAction();
+function setupKeyEvents() {
+  document.addEventListener("keydown", (event) => {
+    switch (event.key) {
+      case "b":
+        isClicking = false;
+        setMethod("Drawing");
+        break;
+      case "c":
+        if (event.ctrlKey && event.altKey) {
+          clearCanvas();
+        }
+        break;
+      case "e":
+        isClicking = false;
+        setMethod("Erasing");
+        break;
+      case "E":
+        isClicking = false;
+        if (event.ctrlKey && event.shiftKey) {
+          exportImage();
+        }
+        break;
+      case "f":
+        isClicking = false;
+        setMethod("Filling");
+        break;
+      case "z":
+        if (event.ctrlKey) {
+          undoAction();
+        }
+        break;
+      case "Z":
+        if (event.ctrlKey && event.shiftKey) {
+          redoAction();
+        }
+        break;
+      default:
+        break;
     }
   });
 }
@@ -456,4 +490,5 @@ window.onload = function () {
   calculateOffsets();
   setupCanvasEvents();
   setupUiEvents();
+  setupKeyEvents();
 };

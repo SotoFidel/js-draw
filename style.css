@@ -6,10 +6,6 @@ body {
     overflow: hidden;
 }
 
-canvas {
-    /* cursor: none; */
-}
-
 #toolLayer {
     position: absolute;
     left: 0;
@@ -64,6 +60,27 @@ canvas {
     padding: 0;
 }
 
+.tool {
+    position: relative;
+}
+
+.tool div.tooltip {
+    color: white;
+    position: absolute;
+    background-color: #323232;
+    border: 2px solid gainsboro;
+    padding: 10px;
+    z-index: 1;
+    left: 110%;
+    top: 0;
+    white-space: nowrap;
+    display: none;
+}
+
+.tool:hover div.tooltip {
+    display: block;
+}
+
 .tool button {
     width: 100%;
     margin-top: 5px;
@@ -71,6 +88,10 @@ canvas {
     border: 2px solid gainsboro;
     font-weight: bold;
     color: white;
+}
+
+.tool button:focus {
+    outline: none;
 }
 
 .tool.chosen button {
