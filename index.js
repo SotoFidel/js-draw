@@ -71,7 +71,6 @@ function draw() {
         0,
         2 * Math.PI,
       );
-      // canvasContext.stroke();
     }
     canvasContext.strokeStyle = "#00000000";
     canvasContext.fillStyle = color;
@@ -90,11 +89,12 @@ function erase() {
   );
   toolContext.stroke();
   if (isClicking) {
+    canvasContext.fillStyle = "white";
     let nc;
     // console.log("erase ", oldCoords, newCoords);
     for (let i = 0; i <= 1; i += 0.05) {
       nc = interpolate(oldCoords, currentCoords, i);
-      canvasContext.clearRect(
+      canvasContext.fillRect(
         Math.max(nc.x - currentMode.strokeWidth / 2, 0),
         Math.max(nc.y - currentMode.strokeWidth / 2, 0),
         currentMode.strokeWidth,
@@ -103,6 +103,7 @@ function erase() {
     }
     // ctx.clearRect(Math.max(newCoords.x - 5, 0), Math.max(newCoords.y - 5, 0), 10, 10);
   }
+  canvasContext.fillStyle = color;
 }
 
 function exportImage() {
