@@ -2,7 +2,9 @@
 
 <!-- ![js-draw demo](https://github.com/SotoFidel/js-draw/raw/refs/heads/js-draw-22/assets/js-draw-demo.mp4) -->
 ## Demo
-https://github.com/SotoFidel/js-draw/blob/main/assets/js-draw-demo.mp4
+https://github.com/user-attachments/assets/6ffe2153-d188-4d00-86ad-b9b45e9bc625
+
+
 
 ## What is it?
 JS-Draw is a simple drawing application written in js.
