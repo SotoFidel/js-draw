@@ -9,12 +9,35 @@ let canvasOffsetX = 0;
 let canvasOffsetY = 0;
 let changeStack = [];
 let redoStack = [];
+
+/**
+ * @typedef {Object} Vec2
+ * @property {number} x - x coordinates
+ * @property {number} y - y coordinates
+ */
+
+/**
+ * @type Vec2
+ */
 let oldCoords = { x: 0, y: 0 };
+
+/**
+ * @type Vec2
+ */
 let currentCoords = { x: 0, y: 0 };
+
+/**
+ * @type ImageData
+ */
 let prevImageData;
 let color = "#000000";
 let alphaColor = "#00000000";
 
+/**
+ * The app knows what it needs to do based on what mode it is in.
+ * So effectively this is a state whose state changes are determined by
+ * ui buttons.
+ */
 let modes = {
   Drawing: {
     mode: "Drawing",
@@ -62,6 +85,7 @@ function draw() {
 
   if (isClicking) {
     canvasContext.beginPath();
+    let nc;
     for (let i = 0; i <= 1; i += 0.05) {
       nc = interpolate(oldCoords, currentCoords, i);
       canvasContext.arc(
@@ -111,9 +135,11 @@ function exportImage() {
   let imageUrl = canvas.toDataURL("image/png");
   tempAnchor.href = imageUrl;
   tempAnchor.download = "exportedImage";
-  document.querySelector("#ribbon").appendChild(tempAnchor);
+  let ribbon = document.querySelector("#ribbon");
+  if (!ribbon) return;
+  ribbon.appendChild(tempAnchor);
   tempAnchor.click();
-  document.querySelector("#ribbon").removeChild(tempAnchor);
+  ribbon.removeChild(tempAnchor);
 }
 
 function bucketFill() {
@@ -149,8 +175,9 @@ function bucketFill() {
   });
 
   while (pixelStack.length > 0) {
-    console.log("working...");
+    // console.log("working...");
     currentPixel = pixelStack.pop();
+    if (!currentPixel) return;
     let x = currentPixel.x1;
     if (isInside(x, currentPixel.y)) {
       while (isInside(x - 1, currentPixel.y)) {
@@ -198,7 +225,18 @@ function bucketFill() {
     }
   }
 
+  /**
+   * Checks if the current x,y coordinates
+   * are close enough to the color of the pixel that
+   * was clicked to initiate the bucket fill.
+   *
+   * @param {number} x - x coord
+   * @param {number} y - y coord
+   */
   function isInside(x, y) {
+    if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) {
+      return false;
+    }
     let currentPixelHex = getPixelColor(x, y);
     if (validColors.includes(currentPixelHex)) {
       return true;
@@ -214,14 +252,11 @@ function bucketFill() {
     gdiff = Math.abs(sourceColorRgb[1] - currentPixel[1]);
     bdiff = Math.abs(sourceColorRgb[2] - currentPixel[2]);
 
-    let valid =
-      rdiff <= 5 &&
-      gdiff <= 5 &&
-      bdiff <= 5 &&
-      x >= 0 &&
-      x < canvas.width &&
-      y >= 0 &&
-      y < canvas.height;
+    let valid = rdiff <= 5 && gdiff <= 5 && bdiff <= 5;
+    // x >= 0 &&
+    // x < canvas.width &&
+    // y >= 0 &&
+    // y < canvas.height;
 
     if (valid) {
       validColors.push(currentPixelHex);
@@ -249,6 +284,12 @@ function bucketFill() {
     return hexRgb;
   }
 
+  /**
+   * @param {string} hex
+   *  A hex color code with a '#' expected at the beginning of the string
+   * @returns Array<number>
+   *  An array where each element corresponds to an RGB value
+   */
   function hexToRgb(hex) {
     return hex
       .slice(1)
@@ -264,6 +305,11 @@ function bucketFill() {
 }
 
 // points A and B, frac between 0 and 1
+/**
+ * @param {Vec2} a
+ * @param {Vec2} b
+ * @param {number} t
+ */
 function interpolate(a, b, t) {
   var nx = a.x + (b.x - a.x) * t;
   var ny = a.y + (b.y - a.y) * t;
