@@ -1,14 +1,29 @@
+/**
+ * @type HtmlCanvasElement
+ */
 let canvas;
+
+/**
+ * @type HtmlCanvasElement
+ */
 let toolCanvas;
 const canvasContainer = document.getElementById("canvasContainer");
+
+/**
+ * @type CanvasRenderingContext2D
+ */
 let canvasContext;
+
+/**
+ * @type CanvasRenderingContext2D
+ */
 let toolContext;
 
 let isClicking = false;
 let canvasOffsetX = 0;
 let canvasOffsetY = 0;
 let changeStack = [];
-let redoStack = [];
+let changeStateIndex = 0;
 
 /**
  * @typedef {Object} Vec2
@@ -26,10 +41,6 @@ let oldCoords = { x: 0, y: 0 };
  */
 let currentCoords = { x: 0, y: 0 };
 
-/**
- * @type ImageData
- */
-let prevImageData;
 let color = "#000000";
 let alphaColor = "#00000000";
 
@@ -86,7 +97,7 @@ function draw() {
   if (isClicking) {
     canvasContext.beginPath();
     let nc;
-    for (let i = 0; i <= 1; i += 0.05) {
+    for (let i = 0; i <= 1; i += 0.02) {
       nc = interpolate(oldCoords, currentCoords, i);
       canvasContext.arc(
         Math.max(nc.x, 0),
@@ -317,19 +328,24 @@ function interpolate(a, b, t) {
 }
 
 function redoAction() {
-  if (redoStack.length > 0) {
-    canvasContext.putImageData(redoStack.pop(), 0, 0);
+  console.log("Before Redo: ", changeStack, changeStateIndex);
+  if (changeStateIndex == changeStack.length - 1 || changeStack.length == 1) {
+    console.log("redoAction(): returning");
+    return;
   }
+  canvasContext.putImageData(changeStack[++changeStateIndex], 0, 0);
+  console.log("After Redo: ", changeStack, changeStateIndex);
 }
 
 function undoAction() {
-  if (changeStack.length > 1) {
-    redoStack.push(changeStack.pop());
-    canvasContext.putImageData(changeStack[changeStack.length - 1], 0, 0);
-  } else if (changeStack.length == 1) {
-    canvasContext.putImageData(changeStack[0], 0, 0);
-    redoStack.push(changeStack.pop());
+  console.log("Before Undo: ", changeStack, changeStateIndex);
+  if (changeStateIndex == 0) {
+    console.log("undoAction(): returning");
+    return;
   }
+
+  canvasContext.putImageData(changeStack[--changeStateIndex], 0, 0);
+  console.log("After Undo: ", changeStack, changeStateIndex);
 }
 
 function setMethod(method) {
@@ -385,21 +401,23 @@ function createCanvas() {
   toolContext.fillStyle = "black";
 
   changeStack.push(
-    canvasContext.getImageData(
-      0,
-      0,
-      canvasContext.canvas.width,
-      canvasContext.canvas.height,
-    ),
+    canvasContext.getImageData(0, 0, canvas.width, canvas.height),
   );
+  changeStateIndex = 0;
 }
 
 function setupCanvasEvents() {
   canvas.addEventListener("mousedown", (event) => {
-    // left click to draw
+    // left click to perform action
     if (event.buttons == 1) {
-      redoStack = [];
       isClicking = true;
+
+      if (changeStateIndex < changeStack.length - 1) {
+        for (let i = changeStack.length; i > changeStateIndex + 1; i--) {
+          changeStack.pop();
+        }
+      }
+
       if (currentMode.mode == "Filling") {
         // TODO: for some reason, making the bucketfill method use currentCoords for its starting coordinates causes
         // the fill algorithm to bug out, which forces me to use this edge case check. Find a way to not make this
@@ -413,21 +431,17 @@ function setupCanvasEvents() {
     }
   });
 
-  ["mouseup", "mouseleave"].forEach((eventType) => {
-    canvas.addEventListener(eventType, () => {
-      isClicking = false;
-      changeStack.push(
-        canvasContext.getImageData(
-          0,
-          0,
-          canvasContext.canvas.width,
-          canvasContext.canvas.height,
-        ),
-      );
-      if (eventType == "mouseleave") {
-        toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
-      }
-    });
+  canvas.addEventListener("mouseup", () => {
+    isClicking = false;
+    changeStack.push(
+      canvasContext.getImageData(0, 0, canvas.width, canvas.height),
+    );
+    changeStateIndex = changeStack.length - 1;
+    console.log(changeStack, changeStateIndex);
+  });
+
+  canvas.addEventListener("mouseleave", () => {
+    toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
   });
 
   canvas.addEventListener("mousemove", (event) => {
