@@ -55,21 +55,33 @@ let modes = {
     fn: draw,
     strokeWidth: 5,
     buttonId: "draw-btn",
-    mouseUpdate: true,
+    mouseUpdateCallback: () => {
+      modes.Drawing.fn();
+    },
   },
   Erasing: {
     mode: "Erasing",
     fn: erase,
     strokeWidth: 5,
     buttonId: "erase-btn",
-    mouseUpdate: true,
+    mouseUpdateCallback: () => {
+      modes.Erasing.fn();
+    },
   },
   Filling: {
     mode: "Filling",
     fn: bucketFill,
     buttonId: "fill-btn",
-    mouseUpdate: false,
+    mouseUpdateCallback: null,
     fnParams: null,
+    setupCallback: () => {
+      document.querySelector("#size").disabled = true;
+      document.querySelector("#sizeVal").disabled = true;
+    },
+    switchCallback: () => {
+      document.querySelector("#size").disabled = false;
+      document.querySelector("#sizeVal").disabled = false;
+    },
   },
 };
 
@@ -349,22 +361,22 @@ function undoAction() {
 }
 
 function setMethod(method) {
+  if (currentMode.switchCallback) {
+    currentMode.switchCallback();
+  }
+
   toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
   modes[currentMode.mode].strokeWidth = currentMode.strokeWidth || 0;
   currentMode = modes[method];
-  document.querySelector("#size").value = currentMode.strokeWidth || 0;
-  document.querySelector("#sizeVal").value = currentMode.strokeWidth || 0;
-  if (method == modes.Filling.mode) {
-    document.querySelector("#size").disabled = true;
-    document.querySelector("#sizeVal").disabled = true;
-  } else {
-    document.querySelector("#size").disabled = false;
-    document.querySelector("#sizeVal").disabled = false;
+
+  if (currentMode.setupCallback) {
+    currentMode.setupCallback();
   }
 
-  document.querySelectorAll(".tool:has(button)").forEach((btn) => {
-    btn.classList.remove("chosen");
-  });
+  document.querySelector("#size").value = currentMode.strokeWidth || 0;
+  document.querySelector("#sizeVal").value = currentMode.strokeWidth || 0;
+
+  document.querySelector(".tool.chosen").classList.remove("chosen");
   document
     .querySelector(`.tool:has(#${currentMode.buttonId})`)
     .classList.add("chosen");
@@ -409,26 +421,31 @@ function createCanvas() {
 function setupCanvasEvents() {
   canvas.addEventListener("mousedown", (event) => {
     // left click to perform action
-    if (event.buttons == 1) {
-      isClicking = true;
-
-      if (changeStateIndex < changeStack.length - 1) {
-        for (let i = changeStack.length; i > changeStateIndex + 1; i--) {
-          changeStack.pop();
-        }
-      }
-
-      if (currentMode.mode == "Filling") {
-        // TODO: for some reason, making the bucketfill method use currentCoords for its starting coordinates causes
-        // the fill algorithm to bug out, which forces me to use this edge case check. Find a way to not make this
-        // soo clunky. We can try higher order functions or removing the mousemove event listener.
-        currentMode.fnParams = {
-          x: Math.round(event.x - canvasOffsetX),
-          y: Math.round(event.y - canvasOffsetY),
-        };
-      }
-      currentMode.fn();
+    if (event.buttons != 1) {
+      return;
     }
+
+    isClicking = true;
+
+    // If the user decided to undo some of their changes, and afterwards
+    // began to draw/erase/etc on the board again, then erase all states on the changeStack
+    // until the current state index is the latest (last one in changeStack)
+    if (changeStateIndex < changeStack.length - 1) {
+      for (let i = changeStack.length; i > changeStateIndex + 1; i--) {
+        changeStack.pop();
+      }
+    }
+
+    if (currentMode.mode == "Filling") {
+      // TODO: for some reason, making the bucketfill method use currentCoords for its starting coordinates causes
+      // the fill algorithm to bug out, which forces me to use this edge case check. Find a way to not make this
+      // soo clunky. We can try higher order functions or removing the mousemove event listener.
+      currentMode.fnParams = {
+        x: Math.round(event.x - canvasOffsetX),
+        y: Math.round(event.y - canvasOffsetY),
+      };
+    }
+    currentMode.fn();
   });
 
   canvas.addEventListener("mouseup", () => {
@@ -451,8 +468,8 @@ function setupCanvasEvents() {
       y: Math.max(event.y - canvasOffsetY, 0),
     };
 
-    if (currentMode.mouseUpdate) {
-      currentMode.fn();
+    if (currentMode.mouseUpdateCallback != null) {
+      currentMode.mouseUpdateCallback();
     }
   });
 }
@@ -541,8 +558,6 @@ function setupUiEvents() {
   document.querySelector("#colorPicker").addEventListener("change", (event) => {
     color = event.target.value;
     alphaColor = `${color}ff`;
-    console.log("new color ", color);
-    console.log("new color ", alphaColor);
   });
 }
 
