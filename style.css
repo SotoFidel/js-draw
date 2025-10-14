@@ -42,11 +42,14 @@ body {
     padding: 10px;
     color: gainsboro;
     height: 30px;
+    display: flex;
+    flex-direction: row;
 
     #size {
         width: 300px;
         accent-color: royalblue;
     }
+
 }
 
 #root {

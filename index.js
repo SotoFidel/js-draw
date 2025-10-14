@@ -58,6 +58,8 @@ let modes = {
     mouseUpdateCallback: () => {
       modes.Drawing.fn();
     },
+    fnParams: null,
+    mouseUpCallback: null,
   },
   Erasing: {
     mode: "Erasing",
@@ -67,6 +69,8 @@ let modes = {
     mouseUpdateCallback: () => {
       modes.Erasing.fn();
     },
+    fnParams: null,
+    mouseUpCallback: null,
   },
   Filling: {
     mode: "Filling",
@@ -74,6 +78,7 @@ let modes = {
     buttonId: "fill-btn",
     mouseUpdateCallback: null,
     fnParams: null,
+    mouseUpCallback: null,
     setupCallback: () => {
       document.querySelector("#size").disabled = true;
       document.querySelector("#sizeVal").disabled = true;
@@ -81,6 +86,247 @@ let modes = {
     switchCallback: () => {
       document.querySelector("#size").disabled = false;
       document.querySelector("#sizeVal").disabled = false;
+    },
+  },
+  Line: {
+    mode: "Line",
+    fn: lineShape,
+    strokeWidth: 5,
+    buttonId: "line-btn",
+    mouseUpdateCallback: () => {
+      modes.Line.fn();
+    },
+    mouseUpCallback: () => {
+      toolContext.strokeWidth = 1;
+      toolContext.strokeStyle = "#000000";
+      toolContext.clearRect(0, 0, canvas.width, canvas.height);
+      canvasContext.beginPath();
+      canvasContext.moveTo(modes.Line.fnParams.x, modes.Line.fnParams.y);
+      canvasContext.lineTo(currentCoords.x, currentCoords.y);
+      canvasContext.lineWidth = currentMode.strokeWidth;
+      canvasContext.strokeStyle = color;
+      canvasContext.stroke();
+      canvasContext.lineWidth = 1;
+    },
+    setupCallback: () => {
+      canvasContext.lineWidth = modes.Line.strokeWidth;
+      toolContext.lineWidth = modes.Line.strokeWidth;
+      canvasContext.strokeStyle = color;
+    },
+    switchCallback: () => {
+      canvasContext.lineWidth = 1;
+      toolCanvas.lineWidth = 1;
+    },
+    fnParams: null,
+  },
+  Square: {
+    mode: "Square",
+    fn: squareShape,
+    strokeWidth: 5,
+    buttonId: "square-btn",
+    mouseUpdateCallback: () => {
+      modes.Square.fn();
+    },
+    mouseUpCallback: () => {
+      const origin = {
+        x: currentMode.fnParams.x,
+        y: currentMode.fnParams.y,
+      };
+      const points = [
+        {
+          x: origin.x,
+          y: origin.y,
+        },
+        {
+          x: currentCoords.x,
+          y: origin.y,
+        },
+        {
+          x: currentCoords.x,
+          y: currentCoords.y,
+        },
+        {
+          x: origin.x,
+          y: currentCoords.y,
+        },
+      ];
+      toolContext.clearRect(0, 0, canvas.width, canvas.height);
+      canvasContext.beginPath();
+      canvasContext.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        canvasContext.lineTo(points[i].x, points[i].y);
+      }
+      canvasContext.lineTo(points[0].x, points[0].y);
+      canvasContext.lineWidth = currentMode.strokeWidth;
+      canvasContext.stroke();
+      canvasContext.lineWidth = 1;
+    },
+    fnParams: null,
+    setupCallback: () => {
+      canvasContext.lineWidth = modes.Square.strokeWidth;
+      toolContext.lineWidth = modes.Square.strokeWidth;
+      canvasContext.strokeStyle = color;
+      canvasContext.lineCap = "square";
+      toolContext.lineCap = "square";
+    },
+    switchCallback: () => {
+      canvasContext.lineWidth = 1;
+      toolContext.lineWidth = 1;
+      canvasContext.lineCap = "butt";
+      toolContext.lineCap = "butt";
+    },
+  },
+  Triangle: {
+    mode: "Triangle",
+    fn: triangleShape,
+    strokeWidth: 5,
+    buttonId: "triangle-btn",
+    mouseUpdateCallback: () => {
+      modes.Triangle.fn();
+    },
+    mouseUpCallback: () => {
+      const origin = {
+        x: currentMode.fnParams.x,
+        y: currentMode.fnParams.y,
+      };
+      const points = [
+        {
+          x: origin.x,
+          y: origin.y,
+        },
+        {
+          x: currentCoords.x,
+          y: currentCoords.y,
+        },
+        {
+          x: origin.x,
+          y: currentCoords.y,
+        },
+      ];
+
+      toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+      canvasContext.beginPath();
+      canvasContext.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        canvasContext.lineTo(points[i].x, points[i].y);
+      }
+      canvasContext.lineTo(points[0].x, points[0].y);
+      canvasContext.lineWidth = currentMode.strokeWidth;
+      canvasContext.strokeStyle = color;
+      canvasContext.stroke();
+      canvasContext.lineWidth = 1;
+    },
+    fnParams: null,
+    setupCallback: () => {
+      canvasContext.lineWidth = modes.Triangle.strokeWidth;
+      toolContext.lineWidth = modes.Triangle.strokeWidth;
+      canvasContext.strokeStyle = color;
+      canvasContext.lineCap = "round";
+      toolContext.lineCap = "round";
+    },
+    switchCallback: () => {
+      canvasContext.lineWidth = 1;
+      toolContext.lineWidth = 1;
+      canvasContext.lineCap = "butt";
+      toolContext.lineCap = "butt";
+    },
+  },
+  Circle: {
+    mode: "Circle",
+    buttonId: "circle-btn",
+    fn: circleShape,
+    strokeWidth: 5,
+    fnParams: null,
+    mouseUpCallback: () => {
+      let center = {
+        x: Math.round((currentMode.fnParams.x + currentCoords.x) / 2),
+        y: Math.round((currentMode.fnParams.y + currentCoords.y) / 2),
+      };
+      let radii = {
+        x: Math.max(1, Math.abs(center.x - currentCoords.x)),
+        y: Math.max(1, Math.abs(center.y - currentCoords.y)),
+      };
+      toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+      canvasContext.moveTo(center.x, center.y);
+      canvasContext.beginPath();
+      canvasContext.ellipse(
+        center.x,
+        center.y,
+        radii.x,
+        radii.y,
+        0,
+        0,
+        2 * Math.PI,
+      );
+      canvasContext.strokeStyle = color;
+      canvasContext.lineWidth = currentMode.strokeWidth;
+      canvasContext.stroke();
+    },
+    mouseUpdateCallback: () => {
+      modes.Circle.fn();
+    },
+  },
+  Star: {
+    mode: "Star",
+    buttonId: "star-btn",
+    fn: starShape,
+    strokeWidth: 5,
+    fnParams: null,
+    mouseUpCallback: null,
+    mouseUpCallback: () => {
+      let center = {
+        x: currentMode.fnParams.x,
+        y: currentMode.fnParams.y,
+      };
+
+      // Get the max of either the number 5 or
+      // the distance between the start point and the current location of the
+      // user's mouse
+      let outerRadius = Math.round(
+        Math.max(
+          5,
+          Math.sqrt(
+            Math.pow(currentCoords.x - center.x, 2) +
+              Math.pow(currentCoords.y - center.y, 2),
+          ),
+        ),
+      );
+
+      let innerRadius = outerRadius / 2.5;
+
+      // Partitioning a circle into 10 different points
+      // (5 for the outer radius, 5 for the inner) and making the star by drawing
+      // alternating lines between the outer radius points and the inner radius
+      // points will not yield a star whose top point is facing 'up'. Apply rotation of 270 degrees
+      // to solve this
+      let rotation = (Math.PI / 2) * 3;
+      let increments = Math.PI / 5;
+      let currentX, currentY;
+
+      toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+      canvasContext.beginPath();
+      canvasContext.moveTo(center.x, center.y - outerRadius);
+
+      for (let i = 0; i < 5; i++) {
+        currentX = center.x + Math.cos(rotation) * outerRadius;
+        currentY = center.y + Math.sin(rotation) * outerRadius;
+        canvasContext.lineTo(currentX, currentY);
+        rotation += increments;
+
+        currentX = center.x + Math.cos(rotation) * innerRadius;
+        currentY = center.y + Math.sin(rotation) * innerRadius;
+        canvasContext.lineTo(currentX, currentY);
+        rotation += increments;
+      }
+
+      canvasContext.lineTo(center.x, center.y - outerRadius);
+      canvasContext.closePath();
+      canvasContext.strokeStyle = color;
+      canvasContext.lineWidth = currentMode.strokeWidth;
+      canvasContext.stroke();
+    },
+    mouseUpdateCallback: () => {
+      modes.Star.fn();
     },
   },
 };
@@ -139,7 +385,7 @@ function erase() {
     canvasContext.fillStyle = "white";
     let nc;
     // console.log("erase ", oldCoords, newCoords);
-    for (let i = 0; i <= 1; i += 0.05) {
+    for (let i = 0; i <= 1; i += 0.5) {
       nc = interpolate(oldCoords, currentCoords, i);
       canvasContext.fillRect(
         Math.max(nc.x - currentMode.strokeWidth / 2, 0),
@@ -327,6 +573,188 @@ function bucketFill() {
   }
 }
 
+function lineShape() {
+  if (!isClicking) {
+    return;
+  }
+  const origin = {
+    x: currentMode.fnParams.x,
+    y: currentMode.fnParams.y,
+  };
+  // toolContext.lineWidth = currentMode.strokeWidth;
+  // canvasContext.lineWidth = currentMode.strokeWidth;
+  toolContext.clearRect(0, 0, canvas.width, canvas.height);
+  toolContext.beginPath();
+  toolContext.lineWidth = currentMode.strokeWidth;
+  toolContext.moveTo(origin.x, origin.y);
+  toolContext.lineTo(currentCoords.x, currentCoords.y);
+  toolContext.strokeStyle = color;
+  toolContext.stroke();
+  toolContext.lineWidth = 1;
+}
+
+function squareShape() {
+  if (!isClicking) {
+    return;
+  }
+  const origin = {
+    x: currentMode.fnParams.x,
+    y: currentMode.fnParams.y,
+  };
+  const points = [
+    {
+      x: origin.x,
+      y: origin.y,
+    },
+    {
+      x: currentCoords.x,
+      y: origin.y,
+    },
+    {
+      x: currentCoords.x,
+      y: currentCoords.y,
+    },
+    {
+      x: origin.x,
+      y: currentCoords.y,
+    },
+  ];
+  toolContext.clearRect(0, 0, canvas.width, canvas.height);
+  toolContext.beginPath(0, 0, canvas.width, canvas.height);
+  toolContext.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i++) {
+    toolContext.lineTo(points[i].x, points[i].y);
+  }
+  toolContext.lineTo(points[0].x, points[0].y);
+  toolContext.lineWidth = currentMode.strokeWidth;
+  toolContext.stroke();
+  toolContext.lineWidth = 1;
+}
+
+function triangleShape() {
+  if (!isClicking) {
+    return;
+  }
+  const origin = {
+    x: currentMode.fnParams.x,
+    y: currentMode.fnParams.y,
+  };
+  const points = [
+    {
+      x: origin.x,
+      y: origin.y,
+    },
+    {
+      x: currentCoords.x,
+      y: currentCoords.y,
+    },
+    {
+      x: origin.x,
+      y: currentCoords.y,
+    },
+  ];
+
+  toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+  toolContext.beginPath();
+  toolContext.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i++) {
+    toolContext.lineTo(points[i].x, points[i].y);
+  }
+  toolContext.lineTo(points[0].x, points[0].y);
+  toolContext.lineWidth = currentMode.strokeWidth;
+  toolContext.strokeStyle = color;
+  toolContext.stroke();
+  toolContext.lineWidth = 1;
+}
+
+function circleShape() {
+  if (!isClicking) {
+    return;
+  }
+
+  // The center of the circle will be a point between where the user clicked
+  // first, and where the user's mouse is currently as long as the left mouse
+  // button is being held
+  let center = {
+    x: Math.round((currentMode.fnParams.x + currentCoords.x) / 2),
+    y: Math.round((currentMode.fnParams.y + currentCoords.y) / 2),
+  };
+
+  // The x and y radii are not 1 to 1. Depending on where the user's mouse is,
+  // the radius on the x axis may not be equal to the radius on the y axis. It can be
+  // higher or lower. This means the user can make ellipses as opposed to just
+  // circles
+  let radii = {
+    x: Math.max(1, Math.abs(center.x - currentCoords.x)),
+    y: Math.max(1, Math.abs(center.y - currentCoords.y)),
+  };
+
+  toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+  toolContext.moveTo(center.x, center.y);
+  toolContext.beginPath();
+  toolContext.ellipse(center.x, center.y, radii.x, radii.y, 0, 0, 2 * Math.PI);
+  toolContext.strokeStyle = color;
+  toolContext.lineWidth = currentMode.strokeWidth;
+  toolContext.stroke();
+}
+
+function starShape() {
+  if (!isClicking) {
+    return;
+  }
+
+  let center = {
+    x: currentMode.fnParams.x,
+    y: currentMode.fnParams.y,
+  };
+
+  // Get the max of either the number 5 or
+  // the distance between the start point and the current location of the
+  // user's mouse
+  let outerRadius = Math.round(
+    Math.max(
+      5,
+      Math.sqrt(
+        Math.pow(currentCoords.x - center.x, 2) +
+          Math.pow(currentCoords.y - center.y, 2),
+      ),
+    ),
+  );
+
+  let innerRadius = outerRadius / 2.5;
+
+  // Partitioning a circle into 10 different points
+  // (5 for the outer radius, 5 for the inner) and making the star by drawing
+  // alternating lines between the outer radius points and the inner radius
+  // points will not yield a star whose top point is facing 'up'. Apply rotation of 270 degrees
+  // to solve this
+  let rotation = (Math.PI / 2) * 3;
+  let increments = Math.PI / 5;
+  let currentX, currentY;
+
+  toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+  toolContext.beginPath();
+  toolContext.moveTo(center.x, center.y - outerRadius);
+
+  for (let i = 0; i < 5; i++) {
+    currentX = center.x + Math.cos(rotation) * outerRadius;
+    currentY = center.y + Math.sin(rotation) * outerRadius;
+    toolContext.lineTo(currentX, currentY);
+    rotation += increments;
+
+    currentX = center.x + Math.cos(rotation) * innerRadius;
+    currentY = center.y + Math.sin(rotation) * innerRadius;
+    toolContext.lineTo(currentX, currentY);
+    rotation += increments;
+  }
+
+  toolContext.lineTo(center.x, center.y - outerRadius);
+  toolContext.closePath();
+  toolContext.strokeStyle = color;
+  toolContext.lineWidth = currentMode.strokeWidth;
+  toolContext.stroke();
+}
+
 // points A and B, frac between 0 and 1
 /**
  * @param {Vec2} a
@@ -334,8 +762,8 @@ function bucketFill() {
  * @param {number} t
  */
 function interpolate(a, b, t) {
-  var nx = a.x + (b.x - a.x) * t;
-  var ny = a.y + (b.y - a.y) * t;
+  let nx = a.x + (b.x - a.x) * t;
+  let ny = a.y + (b.y - a.y) * t;
   return { x: nx, y: ny };
 }
 
@@ -360,18 +788,19 @@ function undoAction() {
   console.log("After Undo: ", changeStack, changeStateIndex);
 }
 
+/**
+ * @param {string} method
+ */
 function setMethod(method) {
   if (currentMode.switchCallback) {
     currentMode.switchCallback();
   }
 
   toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+
+  // Save the stroke width for this mode before switching to another mode
   modes[currentMode.mode].strokeWidth = currentMode.strokeWidth || 0;
   currentMode = modes[method];
-
-  if (currentMode.setupCallback) {
-    currentMode.setupCallback();
-  }
 
   document.querySelector("#size").value = currentMode.strokeWidth || 0;
   document.querySelector("#sizeVal").value = currentMode.strokeWidth || 0;
@@ -380,6 +809,10 @@ function setMethod(method) {
   document
     .querySelector(`.tool:has(#${currentMode.buttonId})`)
     .classList.add("chosen");
+
+  if (currentMode.setupCallback) {
+    currentMode.setupCallback();
+  }
 }
 
 function calculateOffsets() {
@@ -436,15 +869,11 @@ function setupCanvasEvents() {
       }
     }
 
-    if (currentMode.mode == "Filling") {
-      // TODO: for some reason, making the bucketfill method use currentCoords for its starting coordinates causes
-      // the fill algorithm to bug out, which forces me to use this edge case check. Find a way to not make this
-      // soo clunky. We can try higher order functions or removing the mousemove event listener.
-      currentMode.fnParams = {
-        x: Math.round(event.x - canvasOffsetX),
-        y: Math.round(event.y - canvasOffsetY),
-      };
-    }
+    currentMode.fnParams = {
+      x: Math.round(event.x - canvasOffsetX),
+      y: Math.round(event.y - canvasOffsetY),
+    };
+
     currentMode.fn();
   });
 
@@ -454,7 +883,10 @@ function setupCanvasEvents() {
       canvasContext.getImageData(0, 0, canvas.width, canvas.height),
     );
     changeStateIndex = changeStack.length - 1;
-    console.log(changeStack, changeStateIndex);
+
+    if (currentMode.mouseUpCallback) {
+      currentMode.mouseUpCallback();
+    }
   });
 
   canvas.addEventListener("mouseleave", () => {
@@ -518,7 +950,7 @@ function setupKeyEvents() {
 
 function setupUiEvents() {
   document.querySelector(".tool:has(#draw-btn)").classList.add("chosen");
-  let brushSizeInput = document.querySelector("#ribbon > input#size");
+  let brushSizeInput = document.querySelector("#ribbon input#size");
   let brushSizeOutput = document.querySelector("#sizeVal");
   brushSizeOutput.value = brushSizeInput.value;
 
