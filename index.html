@@ -9,35 +9,66 @@
   <body style="display: flex">
     <div style="flex-grow: 1; display: flex; flex-direction: column">
       <div id="ribbon">
-        <input
-          id="size"
-          type="range"
-          min="1"
-          max="500"
-          step="1"
-          name="size"
-          value="5"
-        />
-        <label for="size" style="font-weight: bold;">Size: </label><input type="number" id="sizeVal"> <span>px</span>
+        <div style="padding-right: 10px; border-right: 2px solid gainsboro">
+          <input
+            id="size"
+            type="range"
+            min="1"
+            max="500"
+            step="1"
+            name="size"
+            value="5"
+          />
+          <label for="size" style="font-weight: bold">Size: </label
+          ><input type="number" id="sizeVal" /> <span>px</span>
+        </div>
       </div>
       <div style="flex-grow: 1; display: flex; flex-direction: row">
         <div id="sidebar">
           <div style="display: flex; flex-direction: row">
-            <div style="width:100%;">
-              <input type="color" id="colorPicker">
+            <div style="width: 100%">
+              <input type="color" id="colorPicker" />
             </div>
           </div>
           <div class="tool">
             <button id="draw-btn" onclick="setMethod('Drawing')">Paint</button>
-            <div class="tooltip">[Key: b] - Paint on canvas with selected color</div>
+            <div class="tooltip">
+              [Key: b] - Paint on canvas with selected color
+            </div>
           </div>
           <div class="tool">
             <button id="fill-btn" onclick="setMethod('Filling')">Fill</button>
-            <div class="tooltip">[Key: f] - Fill an area with selected color</div>
+            <div class="tooltip">
+              [Key: f] - Fill an area with selected color
+            </div>
+          </div>
+          <hr
+            style="color: gainsboro height:1px; width: 100%; background: gainsboro"
+          />
+          <div class="tool">
+            <button id="line-btn" onclick="setMethod('Line')">Line</button>
           </div>
           <div class="tool">
-            <button id="fill-btn">Shapes [WIP]</button>
+            <button id="square-btn" onclick="setMethod('Square')">
+              Square
+            </button>
           </div>
+          <div class="tool">
+            <button id="triangle-btn" onclick="setMethod('Triangle')">
+              Triangle
+            </button>
+          </div>
+          <div class="tool">
+            <button id="circle-btn" onclick="setMethod('Circle')">
+              Circle
+            </button>
+          </div>
+          <div class="tool">
+            <button id="star-btn" onclick="setMethod('Star')">Star</button>
+          </div>
+          <hr
+            style="color: gainsboro height:1px; width: 100%; background: gainsboro"
+          />
           <div class="tool">
             <button id="erase-btn" onclick="setMethod('Erasing')">Erase</button>
             <div class="tooltip">[Key: e] - Erase content</div>
@@ -46,23 +77,31 @@
             <button id="clear-btn" onclick="clearCanvas()">Clear</button>
             <div class="tooltip">[Keys: ctrl+alt+c] - clear the canvas</div>
           </div>
-          <hr style="color: gainsboro height:1px; width: 100%; background: gainsboro" />
+          <hr
+            style="color: gainsboro height:1px; width: 100%; background: gainsboro"
+          />
           <div class="tool">
             <button id="undo-btn" onclick="undoAction()">Undo</button>
             <div class="tooltip">[Keys: ctrl+z] - Undo the last action</div>
           </div>
           <div class="tool">
             <button id="redo-btn" onclick="redoAction()">Redo</button>
-            <div class="tooltip">[Keys: ctrl+shift+z] - Redo the last undone action</div>
+            <div class="tooltip">
+              [Keys: ctrl+shift+z] - Redo the last undone action
+            </div>
           </div>
-          <hr style="color: gainsboro height:1px; width: 100%; background: gainsboro" />
+          <hr
+            style="color: gainsboro height:1px; width: 100%; background: gainsboro"
+          />
           <div class="tool">
             <button id="export-btn" onclick="exportImage()">Export</button>
-            <div class="tooltip">[Keys: ctrl+shift+e] - Export the canvas as a png</div>
+            <div class="tooltip">
+              [Keys: ctrl+shift+e] - Export the canvas as a png
+            </div>
           </div>
         </div>
-        <div id="root" style="position:relative; width: 100%; height: 100%;">
-          <div id="canvasContainer" style="width: 100%; height: 100%;"></div>
+        <div id="root" style="position: relative; width: 100%; height: 100%">
+          <div id="canvasContainer" style="width: 100%; height: 100%"></div>
         </div>
       </div>
       <!-- <footer style="background-color: lightgrey; margin-top: auto">hi</footer> -->
