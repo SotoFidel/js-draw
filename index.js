@@ -90,23 +90,18 @@ let modes = {
   },
   Line: {
     mode: "Line",
-    fn: lineShape,
+    fn: () => {
+      lineShape(currentMode.fnParams);
+    },
     strokeWidth: 5,
     buttonId: "line-btn",
     mouseUpdateCallback: () => {
       modes.Line.fn();
     },
     mouseUpCallback: () => {
-      toolContext.strokeWidth = 1;
-      toolContext.strokeStyle = "#000000";
-      toolContext.clearRect(0, 0, canvas.width, canvas.height);
-      canvasContext.beginPath();
-      canvasContext.moveTo(modes.Line.fnParams.x, modes.Line.fnParams.y);
-      canvasContext.lineTo(currentCoords.x, currentCoords.y);
-      canvasContext.lineWidth = currentMode.strokeWidth;
-      canvasContext.strokeStyle = color;
-      canvasContext.stroke();
-      canvasContext.lineWidth = 1;
+      currentMode.fnParams.commit = true;
+      lineShape(currentMode.fnParams);
+      currentMode.fnParams.commit = false;
     },
     setupCallback: () => {
       canvasContext.lineWidth = modes.Line.strokeWidth;
@@ -117,51 +112,32 @@ let modes = {
       canvasContext.lineWidth = 1;
       toolCanvas.lineWidth = 1;
     },
-    fnParams: null,
+    fnParams: {
+      x: 0,
+      y: 0,
+      commit: false,
+    },
   },
   Square: {
     mode: "Square",
-    fn: squareShape,
+    fn: () => {
+      squareShape(currentMode.fnParams);
+    },
     strokeWidth: 5,
     buttonId: "square-btn",
     mouseUpdateCallback: () => {
       modes.Square.fn();
     },
     mouseUpCallback: () => {
-      const origin = {
-        x: currentMode.fnParams.x,
-        y: currentMode.fnParams.y,
-      };
-      const points = [
-        {
-          x: origin.x,
-          y: origin.y,
-        },
-        {
-          x: currentCoords.x,
-          y: origin.y,
-        },
-        {
-          x: currentCoords.x,
-          y: currentCoords.y,
-        },
-        {
-          x: origin.x,
-          y: currentCoords.y,
-        },
-      ];
-      toolContext.clearRect(0, 0, canvas.width, canvas.height);
-      canvasContext.beginPath();
-      canvasContext.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length; i++) {
-        canvasContext.lineTo(points[i].x, points[i].y);
-      }
-      canvasContext.lineTo(points[0].x, points[0].y);
-      canvasContext.lineWidth = currentMode.strokeWidth;
-      canvasContext.stroke();
-      canvasContext.lineWidth = 1;
+      currentMode.fnParams.commit = true;
+      squareShape(currentMode.fnParams);
+      currentMode.fnParams.commit = false;
     },
-    fnParams: null,
+    fnParams: {
+      x: 0,
+      y: 0,
+      commit: false,
+    },
     setupCallback: () => {
       canvasContext.lineWidth = modes.Square.strokeWidth;
       toolContext.lineWidth = modes.Square.strokeWidth;
@@ -178,45 +154,24 @@ let modes = {
   },
   Triangle: {
     mode: "Triangle",
-    fn: triangleShape,
+    fn: () => {
+      triangleShape(currentMode.fnParams);
+    },
     strokeWidth: 5,
     buttonId: "triangle-btn",
     mouseUpdateCallback: () => {
-      modes.Triangle.fn();
+      triangleShape(currentMode.fnParams);
     },
     mouseUpCallback: () => {
-      const origin = {
-        x: currentMode.fnParams.x,
-        y: currentMode.fnParams.y,
-      };
-      const points = [
-        {
-          x: origin.x,
-          y: origin.y,
-        },
-        {
-          x: currentCoords.x,
-          y: currentCoords.y,
-        },
-        {
-          x: origin.x,
-          y: currentCoords.y,
-        },
-      ];
-
-      toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
-      canvasContext.beginPath();
-      canvasContext.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length; i++) {
-        canvasContext.lineTo(points[i].x, points[i].y);
-      }
-      canvasContext.lineTo(points[0].x, points[0].y);
-      canvasContext.lineWidth = currentMode.strokeWidth;
-      canvasContext.strokeStyle = color;
-      canvasContext.stroke();
-      canvasContext.lineWidth = 1;
+      currentMode.fnParams.commit = true;
+      triangleShape(currentMode.fnParams);
+      currentMode.fnParams.commit = false;
     },
-    fnParams: null,
+    fnParams: {
+      x: 0,
+      y: 0,
+      commit: false,
+    },
     setupCallback: () => {
       canvasContext.lineWidth = modes.Triangle.strokeWidth;
       toolContext.lineWidth = modes.Triangle.strokeWidth;
@@ -234,33 +189,19 @@ let modes = {
   Circle: {
     mode: "Circle",
     buttonId: "circle-btn",
-    fn: circleShape,
+    fn: () => {
+      circleShape(currentMode.fnParams);
+    },
     strokeWidth: 5,
-    fnParams: null,
+    fnParams: {
+      x: 0,
+      y: 0,
+      commit: false,
+    },
     mouseUpCallback: () => {
-      let center = {
-        x: Math.round((currentMode.fnParams.x + currentCoords.x) / 2),
-        y: Math.round((currentMode.fnParams.y + currentCoords.y) / 2),
-      };
-      let radii = {
-        x: Math.max(1, Math.abs(center.x - currentCoords.x)),
-        y: Math.max(1, Math.abs(center.y - currentCoords.y)),
-      };
-      toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
-      canvasContext.moveTo(center.x, center.y);
-      canvasContext.beginPath();
-      canvasContext.ellipse(
-        center.x,
-        center.y,
-        radii.x,
-        radii.y,
-        0,
-        0,
-        2 * Math.PI,
-      );
-      canvasContext.strokeStyle = color;
-      canvasContext.lineWidth = currentMode.strokeWidth;
-      canvasContext.stroke();
+      currentMode.fnParams.commit = true;
+      circleShape(currentMode.fnParams);
+      currentMode.fnParams.commit = false;
     },
     mouseUpdateCallback: () => {
       modes.Circle.fn();
@@ -269,61 +210,20 @@ let modes = {
   Star: {
     mode: "Star",
     buttonId: "star-btn",
-    fn: starShape,
+    fn: () => {
+      starShape(currentMode.fnParams);
+    },
     strokeWidth: 5,
-    fnParams: null,
+    fnParams: {
+      x: 0,
+      y: 0,
+      commit: false,
+    },
     mouseUpCallback: null,
     mouseUpCallback: () => {
-      let center = {
-        x: currentMode.fnParams.x,
-        y: currentMode.fnParams.y,
-      };
-
-      // Get the max of either the number 5 or
-      // the distance between the start point and the current location of the
-      // user's mouse
-      let outerRadius = Math.round(
-        Math.max(
-          5,
-          Math.sqrt(
-            Math.pow(currentCoords.x - center.x, 2) +
-              Math.pow(currentCoords.y - center.y, 2),
-          ),
-        ),
-      );
-
-      let innerRadius = outerRadius / 2.5;
-
-      // Partitioning a circle into 10 different points
-      // (5 for the outer radius, 5 for the inner) and making the star by drawing
-      // alternating lines between the outer radius points and the inner radius
-      // points will not yield a star whose top point is facing 'up'. Apply rotation of 270 degrees
-      // to solve this
-      let rotation = (Math.PI / 2) * 3;
-      let increments = Math.PI / 5;
-      let currentX, currentY;
-
-      toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
-      canvasContext.beginPath();
-      canvasContext.moveTo(center.x, center.y - outerRadius);
-
-      for (let i = 0; i < 5; i++) {
-        currentX = center.x + Math.cos(rotation) * outerRadius;
-        currentY = center.y + Math.sin(rotation) * outerRadius;
-        canvasContext.lineTo(currentX, currentY);
-        rotation += increments;
-
-        currentX = center.x + Math.cos(rotation) * innerRadius;
-        currentY = center.y + Math.sin(rotation) * innerRadius;
-        canvasContext.lineTo(currentX, currentY);
-        rotation += increments;
-      }
-
-      canvasContext.lineTo(center.x, center.y - outerRadius);
-      canvasContext.closePath();
-      canvasContext.strokeStyle = color;
-      canvasContext.lineWidth = currentMode.strokeWidth;
-      canvasContext.stroke();
+      currentMode.fnParams.commit = true;
+      starShape(currentMode.fnParams);
+      currentMode.fnParams.commit = false;
     },
     mouseUpdateCallback: () => {
       modes.Star.fn();
@@ -573,8 +473,8 @@ function bucketFill() {
   }
 }
 
-function lineShape() {
-  if (!isClicking) {
+function lineShape(params) {
+  if (!isClicking && !params.commit) {
     return;
   }
   const origin = {
@@ -584,17 +484,25 @@ function lineShape() {
   // toolContext.lineWidth = currentMode.strokeWidth;
   // canvasContext.lineWidth = currentMode.strokeWidth;
   toolContext.clearRect(0, 0, canvas.width, canvas.height);
-  toolContext.beginPath();
-  toolContext.lineWidth = currentMode.strokeWidth;
-  toolContext.moveTo(origin.x, origin.y);
-  toolContext.lineTo(currentCoords.x, currentCoords.y);
-  toolContext.strokeStyle = color;
-  toolContext.stroke();
-  toolContext.lineWidth = 1;
+
+  let context;
+  if (params.commit) {
+    context = canvasContext;
+  } else {
+    context = toolContext;
+  }
+
+  context.beginPath();
+  context.lineWidth = currentMode.strokeWidth;
+  context.moveTo(origin.x, origin.y);
+  context.lineTo(currentCoords.x, currentCoords.y);
+  context.strokeStyle = color;
+  context.stroke();
+  context.lineWidth = 1;
 }
 
-function squareShape() {
-  if (!isClicking) {
+function squareShape(params) {
+  if (!isClicking && !params.commit) {
     return;
   }
   const origin = {
@@ -620,19 +528,26 @@ function squareShape() {
     },
   ];
   toolContext.clearRect(0, 0, canvas.width, canvas.height);
-  toolContext.beginPath(0, 0, canvas.width, canvas.height);
-  toolContext.moveTo(points[0].x, points[0].y);
-  for (let i = 1; i < points.length; i++) {
-    toolContext.lineTo(points[i].x, points[i].y);
+
+  let context;
+  if (params.commit) {
+    context = canvasContext;
+  } else {
+    context = toolContext;
   }
-  toolContext.lineTo(points[0].x, points[0].y);
-  toolContext.lineWidth = currentMode.strokeWidth;
-  toolContext.stroke();
-  toolContext.lineWidth = 1;
+  context.beginPath(0, 0, canvas.width, canvas.height);
+  context.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i++) {
+    context.lineTo(points[i].x, points[i].y);
+  }
+  context.lineTo(points[0].x, points[0].y);
+  context.lineWidth = currentMode.strokeWidth;
+  context.stroke();
+  context.lineWidth = 1;
 }
 
-function triangleShape() {
-  if (!isClicking) {
+function triangleShape(params) {
+  if (!isClicking && !params.commit) {
     return;
   }
   const origin = {
@@ -655,20 +570,28 @@ function triangleShape() {
   ];
 
   toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
-  toolContext.beginPath();
-  toolContext.moveTo(points[0].x, points[0].y);
-  for (let i = 1; i < points.length; i++) {
-    toolContext.lineTo(points[i].x, points[i].y);
+
+  let context;
+  if (params.commit) {
+    context = canvasContext;
+  } else {
+    context = toolContext;
   }
-  toolContext.lineTo(points[0].x, points[0].y);
-  toolContext.lineWidth = currentMode.strokeWidth;
-  toolContext.strokeStyle = color;
-  toolContext.stroke();
-  toolContext.lineWidth = 1;
+
+  context.beginPath();
+  context.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i++) {
+    context.lineTo(points[i].x, points[i].y);
+  }
+  context.lineTo(points[0].x, points[0].y);
+  context.lineWidth = currentMode.strokeWidth;
+  context.strokeStyle = color;
+  context.stroke();
+  context.lineWidth = 1;
 }
 
-function circleShape() {
-  if (!isClicking) {
+function circleShape(params) {
+  if (!isClicking && !params.commit) {
     return;
   }
 
@@ -690,16 +613,24 @@ function circleShape() {
   };
 
   toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
-  toolContext.moveTo(center.x, center.y);
-  toolContext.beginPath();
-  toolContext.ellipse(center.x, center.y, radii.x, radii.y, 0, 0, 2 * Math.PI);
-  toolContext.strokeStyle = color;
-  toolContext.lineWidth = currentMode.strokeWidth;
-  toolContext.stroke();
+
+  let context;
+  if (params.commit) {
+    context = canvasContext;
+  } else {
+    context = toolContext;
+  }
+
+  context.moveTo(center.x, center.y);
+  context.beginPath();
+  context.ellipse(center.x, center.y, radii.x, radii.y, 0, 0, 2 * Math.PI);
+  context.strokeStyle = color;
+  context.lineWidth = currentMode.strokeWidth;
+  context.stroke();
 }
 
-function starShape() {
-  if (!isClicking) {
+function starShape(params) {
+  if (!isClicking && !params.commit) {
     return;
   }
 
@@ -733,26 +664,33 @@ function starShape() {
   let currentX, currentY;
 
   toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
-  toolContext.beginPath();
-  toolContext.moveTo(center.x, center.y - outerRadius);
+  let context;
+  if (params.commit) {
+    context = canvasContext;
+  } else {
+    context = toolContext;
+  }
+
+  context.beginPath();
+  context.moveTo(center.x, center.y - outerRadius);
 
   for (let i = 0; i < 5; i++) {
     currentX = center.x + Math.cos(rotation) * outerRadius;
     currentY = center.y + Math.sin(rotation) * outerRadius;
-    toolContext.lineTo(currentX, currentY);
+    context.lineTo(currentX, currentY);
     rotation += increments;
 
     currentX = center.x + Math.cos(rotation) * innerRadius;
     currentY = center.y + Math.sin(rotation) * innerRadius;
-    toolContext.lineTo(currentX, currentY);
+    context.lineTo(currentX, currentY);
     rotation += increments;
   }
 
-  toolContext.lineTo(center.x, center.y - outerRadius);
-  toolContext.closePath();
-  toolContext.strokeStyle = color;
-  toolContext.lineWidth = currentMode.strokeWidth;
-  toolContext.stroke();
+  context.lineTo(center.x, center.y - outerRadius);
+  context.closePath();
+  context.strokeStyle = color;
+  context.lineWidth = currentMode.strokeWidth;
+  context.stroke();
 }
 
 // points A and B, frac between 0 and 1
@@ -869,24 +807,30 @@ function setupCanvasEvents() {
       }
     }
 
-    currentMode.fnParams = {
-      x: Math.round(event.x - canvasOffsetX),
-      y: Math.round(event.y - canvasOffsetY),
-    };
+    // currentMode.fnParams = {
+    //   x: Math.round(event.x - canvasOffsetX),
+    //   y: Math.round(event.y - canvasOffsetY),
+    // };
+
+    currentMode.fnParams.x = Math.round(event.x - canvasOffsetX);
+    currentMode.fnParams.y = Math.round(event.y - canvasOffsetY);
 
     currentMode.fn();
   });
 
   canvas.addEventListener("mouseup", () => {
     isClicking = false;
+
+    // Mainly for shape modes. When we leave the mouse up,
+    // we will 'commit' the shape to the main canvas instead of the overlay/tool
+    // canvas. Commit it to the main canvas and THEN update the change stack
+    if (currentMode.mouseUpCallback) {
+      currentMode.mouseUpCallback();
+    }
     changeStack.push(
       canvasContext.getImageData(0, 0, canvas.width, canvas.height),
     );
     changeStateIndex = changeStack.length - 1;
-
-    if (currentMode.mouseUpCallback) {
-      currentMode.mouseUpCallback();
-    }
   });
 
   canvas.addEventListener("mouseleave", () => {
