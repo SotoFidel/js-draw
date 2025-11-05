@@ -44,6 +44,12 @@ let currentCoords = { x: 0, y: 0 };
 let color = "#000000";
 let alphaColor = "#00000000";
 
+let keys = {
+  ctrl: false,
+  shift: false,
+  alt: false,
+};
+
 /**
  * The app knows what it needs to do based on what mode it is in.
  * So effectively this is a state whose state changes are determined by
@@ -505,28 +511,63 @@ function squareShape(params) {
   if (!isClicking && !params.commit) {
     return;
   }
-  const origin = {
+  let origin = {
     x: currentMode.fnParams.x,
     y: currentMode.fnParams.y,
   };
-  const points = [
-    {
-      x: origin.x,
-      y: origin.y,
-    },
-    {
-      x: currentCoords.x,
-      y: origin.y,
-    },
-    {
-      x: currentCoords.x,
-      y: currentCoords.y,
-    },
-    {
-      x: origin.x,
-      y: currentCoords.y,
-    },
-  ];
+  let points;
+  if (keys.ctrl) {
+    // let radius = Math.round(
+    //   Math.max(
+    //     5,
+    //     Math.sqrt(
+    //       Math.pow(currentCoords.x - origin.x, 2) +
+    //         Math.pow(currentCoords.y - origin.y, 2),
+    //     ),
+    //   ),
+    // );
+    let radii = {
+      x: Math.max(1, Math.abs(origin.x - currentCoords.x)),
+      y: Math.max(1, Math.abs(origin.y - currentCoords.y)),
+    };
+    points = [
+      {
+        x: origin.x + Math.cos(Math.PI / 4) * radii.x,
+        y: origin.y + Math.sin(Math.PI / 4) * radii.y,
+      },
+      {
+        x: origin.x + Math.cos((3 * Math.PI) / 4) * radii.x,
+        y: origin.y + Math.sin((3 * Math.PI) / 4) * radii.y,
+      },
+      {
+        x: origin.x + Math.cos((5 * Math.PI) / 4) * radii.x,
+        y: origin.y + Math.sin((5 * Math.PI) / 4) * radii.y,
+      },
+      {
+        x: origin.x + Math.cos((7 * Math.PI) / 4) * radii.x,
+        y: origin.y + Math.sin((7 * Math.PI) / 4) * radii.y,
+      },
+    ];
+  } else {
+    points = [
+      {
+        x: origin.x,
+        y: origin.y,
+      },
+      {
+        x: currentCoords.x,
+        y: origin.y,
+      },
+      {
+        x: currentCoords.x,
+        y: currentCoords.y,
+      },
+      {
+        x: origin.x,
+        y: currentCoords.y,
+      },
+    ];
+  }
   toolContext.clearRect(0, 0, canvas.width, canvas.height);
 
   let context;
@@ -554,20 +595,42 @@ function triangleShape(params) {
     x: currentMode.fnParams.x,
     y: currentMode.fnParams.y,
   };
-  const points = [
-    {
-      x: origin.x,
-      y: origin.y,
-    },
-    {
-      x: currentCoords.x,
-      y: currentCoords.y,
-    },
-    {
-      x: origin.x,
-      y: currentCoords.y,
-    },
-  ];
+  let points;
+  if (keys.ctrl) {
+    let radii = {
+      x: Math.max(1, Math.abs(origin.x - currentCoords.x)),
+      y: Math.max(1, Math.abs(origin.y - currentCoords.y)),
+    };
+    points = [
+      {
+        x: origin.x + Math.cos((3 * Math.PI) / 2) * radii.x,
+        y: origin.y + Math.sin((3 * Math.PI) / 2) * radii.y,
+      },
+      {
+        x: origin.x + Math.cos((5 * Math.PI) / 6) * radii.x,
+        y: origin.y + Math.sin((5 * Math.PI) / 6) * radii.y,
+      },
+      {
+        x: origin.x + Math.cos(Math.PI / 6) * radii.x,
+        y: origin.y + Math.sin(Math.PI / 6) * radii.y,
+      },
+    ];
+  } else {
+    points = [
+      {
+        x: origin.x,
+        y: origin.y,
+      },
+      {
+        x: currentCoords.x,
+        y: currentCoords.y,
+      },
+      {
+        x: origin.x,
+        y: currentCoords.y,
+      },
+    ];
+  }
 
   toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
 
@@ -598,10 +661,18 @@ function circleShape(params) {
   // The center of the circle will be a point between where the user clicked
   // first, and where the user's mouse is currently as long as the left mouse
   // button is being held
-  let center = {
-    x: Math.round((currentMode.fnParams.x + currentCoords.x) / 2),
-    y: Math.round((currentMode.fnParams.y + currentCoords.y) / 2),
-  };
+  let center;
+  if (keys.ctrl) {
+    center = {
+      x: currentMode.fnParams.x,
+      y: currentMode.fnParams.y,
+    };
+  } else {
+    center = {
+      x: Math.round((currentMode.fnParams.x + currentCoords.x) / 2),
+      y: Math.round((currentMode.fnParams.y + currentCoords.y) / 2),
+    };
+  }
 
   // The x and y radii are not 1 to 1. Depending on where the user's mouse is,
   // the radius on the x axis may not be equal to the radius on the y axis. It can be
@@ -852,6 +923,9 @@ function setupCanvasEvents() {
 
 function setupKeyEvents() {
   document.addEventListener("keydown", (event) => {
+    keys.ctrl = event.ctrlKey;
+    keys.shift = event.shiftKey;
+    keys.alt = event.altKey;
     switch (event.key) {
       case "b":
         isClicking = false;
@@ -889,6 +963,11 @@ function setupKeyEvents() {
       default:
         break;
     }
+  });
+  document.addEventListener("keyup", (event) => {
+    keys.ctrl = event.ctrlKey;
+    keys.shift = event.shiftKey;
+    keys.alt = event.altKey;
   });
 }
 
