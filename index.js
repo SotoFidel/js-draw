@@ -833,6 +833,9 @@ function circleShape(params) {
     context = canvasContext;
   } else {
     context = toolContext;
+    context.beginPath();
+    context.arc(center.x, center.y, 5, 0, 2 * Math.PI);
+    context.stroke();
   }
 
   context.moveTo(center.x, center.y);
@@ -853,27 +856,93 @@ function starShape(params) {
     y: currentMode.fnParams.y,
   };
 
-  // Get the max of either the number 5 or
-  // the distance between the start point and the current location of the
-  // user's mouse
-  let outerRadius = Math.round(
-    Math.max(
-      5,
-      Math.sqrt(
-        Math.pow(currentCoords.x - center.x, 2) +
-          Math.pow(currentCoords.y - center.y, 2),
-      ),
-    ),
-  );
+  let outerRadius;
+  let innerRadius;
 
-  let innerRadius = outerRadius / 2.5;
+  if (keys.ctrl) {
+    if (keys.shift) {
+      let outerDist = Math.abs(currentCoords.y - center.y);
+      let innerDist = outerDist / 2.5;
+      outerRadius = {
+        x: outerDist,
+        y: outerDist,
+      };
 
-  // Partitioning a circle into 10 different points
+      innerRadius = {
+        x: innerDist,
+        y: innerDist,
+      };
+    } else {
+      outerRadius = {
+        x: Math.abs(currentCoords.x - center.x),
+        y: Math.abs(currentCoords.y - center.y),
+      };
+
+      innerRadius = {
+        x: outerRadius.x / 2.5,
+        y: outerRadius.y / 2.5,
+      };
+    }
+  } else if (keys.shift) {
+    let angle = Math.atan2(
+      currentCoords.y - currentMode.fnParams.y,
+      currentCoords.x - currentMode.fnParams.x,
+    );
+    if (angle < 0) {
+      angle += 2 * Math.PI;
+    }
+
+    angle = snapValueArray(angle, [
+      Math.PI / 4,
+      (3 * Math.PI) / 4,
+      (5 * Math.PI) / 4,
+      (7 * Math.PI) / 4,
+    ]);
+
+    let a = Math.abs(currentCoords.y - currentMode.fnParams.y);
+    // b = a, but it's soo unecessary, so let's assume the second summand is Math.pow(b,2)
+    let c = Math.sqrt(Math.pow(a, 2) + Math.pow(a, 2));
+
+    oppositeCorner = {
+      x: currentMode.fnParams.x + Math.cos(angle) * c,
+      y: currentMode.fnParams.y + Math.sin(angle) * c,
+    };
+
+    // 2)
+    center = {
+      x: Math.round((currentMode.fnParams.x + oppositeCorner.x) / 2),
+      y: Math.round((currentMode.fnParams.y + oppositeCorner.y) / 2),
+    };
+    outerRadius = {
+      x: Math.abs(currentCoords.y - center.y),
+      y: Math.abs(currentCoords.y - center.y),
+    };
+
+    innerRadius = {
+      x: outerRadius.x / 2.5,
+      y: outerRadius.y / 2.5,
+    };
+  } else {
+    center = {
+      x: Math.round((currentMode.fnParams.x + currentCoords.x) / 2),
+      y: Math.round((currentMode.fnParams.y + currentCoords.y) / 2),
+    };
+    outerRadius = {
+      x: Math.abs(currentCoords.x - center.x),
+      y: Math.abs(currentCoords.y - center.y),
+    };
+
+    innerRadius = {
+      x: outerRadius.x / 2.5,
+      y: outerRadius.y / 2.5,
+    };
+  }
+
+  // Partition a circle into 10 different points
   // (5 for the outer radius, 5 for the inner) and making the star by drawing
-  // alternating lines between the outer radius points and the inner radius
-  // points will not yield a star whose top point is facing 'up'. Apply rotation of 270 degrees
-  // to solve this
-  let rotation = (Math.PI / 2) * 3;
+  // alternating lines between the outer radius points and the inner radius,
+  // starting with the top point (clockwise)
+  let rotation = (3 * Math.PI) / 2;
   let increments = Math.PI / 5;
   let currentX, currentY;
 
@@ -883,24 +952,27 @@ function starShape(params) {
     context = canvasContext;
   } else {
     context = toolContext;
+    context.beginPath();
+    context.arc(center.x, center.y, 5, 0, 2 * Math.PI);
+    context.stroke();
   }
 
   context.beginPath();
-  context.moveTo(center.x, center.y - outerRadius);
+  context.moveTo(center.x, center.y - outerRadius.y);
 
   for (let i = 0; i < 5; i++) {
-    currentX = center.x + Math.cos(rotation) * outerRadius;
-    currentY = center.y + Math.sin(rotation) * outerRadius;
+    currentX = center.x + Math.cos(rotation) * outerRadius.x;
+    currentY = center.y + Math.sin(rotation) * outerRadius.y;
     context.lineTo(currentX, currentY);
     rotation += increments;
 
-    currentX = center.x + Math.cos(rotation) * innerRadius;
-    currentY = center.y + Math.sin(rotation) * innerRadius;
+    currentX = center.x + Math.cos(rotation) * innerRadius.x;
+    currentY = center.y + Math.sin(rotation) * innerRadius.y;
     context.lineTo(currentX, currentY);
     rotation += increments;
   }
 
-  context.lineTo(center.x, center.y - outerRadius);
+  context.lineTo(center.x, center.y - outerRadius.y);
   context.closePath();
   context.strokeStyle = color;
   context.lineWidth = currentMode.strokeWidth;
