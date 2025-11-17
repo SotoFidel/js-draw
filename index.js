@@ -52,7 +52,7 @@ let keys = {
 
 /**
  * The app knows what it needs to do based on what mode it is in.
- * So effectively this is a state whose state changes are determined by
+ * So effectively this is a state machine whose state changes are determined by
  * ui buttons.
  */
 let modes = {
@@ -290,7 +290,6 @@ function erase() {
   if (isClicking) {
     canvasContext.fillStyle = "white";
     let nc;
-    // console.log("erase ", oldCoords, newCoords);
     for (let i = 0; i <= 1; i += 0.5) {
       nc = interpolate(oldCoords, currentCoords, i);
       canvasContext.fillRect(
@@ -333,7 +332,6 @@ function bucketFill() {
   invalidColors.push(color);
 
   if (!isInside(currentMode.fnParams.x, currentMode.fnParams.y)) {
-    console.log("alarm!!!");
     return;
   }
   pixelStack.push({
@@ -350,7 +348,6 @@ function bucketFill() {
   });
 
   while (pixelStack.length > 0) {
-    // console.log("working...");
     currentPixel = pixelStack.pop();
     if (!currentPixel) return;
     let x = currentPixel.x1;
@@ -487,8 +484,32 @@ function lineShape(params) {
     x: currentMode.fnParams.x,
     y: currentMode.fnParams.y,
   };
-  // toolContext.lineWidth = currentMode.strokeWidth;
-  // canvasContext.lineWidth = currentMode.strokeWidth;
+
+  let destination = currentCoords;
+
+  if (keys.shift) {
+    let angle = Math.atan2(
+      currentCoords.y - origin.y,
+      currentCoords.x - origin.x,
+    );
+    if (angle < 0) {
+      angle += 2 * Math.PI;
+    }
+
+    angle = snapValueInterval(angle, Math.PI / 12);
+
+    let dist = Math.round(
+      Math.sqrt(
+        Math.pow(currentCoords.x - origin.x, 2) +
+          Math.pow(currentCoords.y - origin.y, 2),
+      ),
+    );
+
+    destination = {
+      x: origin.x + Math.cos(angle) * dist,
+      y: origin.y + Math.sin(angle) * dist,
+    };
+  }
   toolContext.clearRect(0, 0, canvas.width, canvas.height);
 
   let context;
@@ -501,7 +522,7 @@ function lineShape(params) {
   context.beginPath();
   context.lineWidth = currentMode.strokeWidth;
   context.moveTo(origin.x, origin.y);
-  context.lineTo(currentCoords.x, currentCoords.y);
+  context.lineTo(destination.x, destination.y);
   context.strokeStyle = color;
   context.stroke();
   context.lineWidth = 1;
@@ -517,35 +538,69 @@ function squareShape(params) {
   };
   let points;
   if (keys.ctrl) {
-    // let radius = Math.round(
-    //   Math.max(
-    //     5,
-    //     Math.sqrt(
-    //       Math.pow(currentCoords.x - origin.x, 2) +
-    //         Math.pow(currentCoords.y - origin.y, 2),
-    //     ),
-    //   ),
-    // );
-    let radii = {
-      x: Math.max(1, Math.abs(origin.x - currentCoords.x)),
-      y: Math.max(1, Math.abs(origin.y - currentCoords.y)),
-    };
+    let xDist = Math.max(1, Math.abs(origin.x - currentCoords.x));
+    let yDist = Math.max(1, Math.abs(origin.y - currentCoords.y));
+    if (keys.shift) {
+      xDist = yDist;
+    }
     points = [
       {
-        x: origin.x + Math.cos(Math.PI / 4) * radii.x,
-        y: origin.y + Math.sin(Math.PI / 4) * radii.y,
+        x: origin.x - xDist,
+        y: origin.y - yDist,
       },
       {
-        x: origin.x + Math.cos((3 * Math.PI) / 4) * radii.x,
-        y: origin.y + Math.sin((3 * Math.PI) / 4) * radii.y,
+        x: origin.x + xDist,
+        y: origin.y - yDist,
       },
       {
-        x: origin.x + Math.cos((5 * Math.PI) / 4) * radii.x,
-        y: origin.y + Math.sin((5 * Math.PI) / 4) * radii.y,
+        x: origin.x + xDist,
+        y: origin.y + yDist,
       },
       {
-        x: origin.x + Math.cos((7 * Math.PI) / 4) * radii.x,
-        y: origin.y + Math.sin((7 * Math.PI) / 4) * radii.y,
+        x: origin.x - xDist,
+        y: origin.y + yDist,
+      },
+    ];
+  } else if (keys.shift) {
+    let angle = Math.atan2(
+      currentCoords.y - currentMode.fnParams.y,
+      currentCoords.x - currentMode.fnParams.x,
+    );
+    if (angle < 0) {
+      angle += 2 * Math.PI;
+    }
+    angle = snapValueArray(angle, [
+      Math.PI / 4,
+      (3 * Math.PI) / 4,
+      (5 * Math.PI) / 4,
+      (7 * Math.PI) / 4,
+    ]);
+
+    let a = Math.abs(currentCoords.y - currentMode.fnParams.y);
+    let b = a;
+    let c = Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
+
+    let oppositeCorner = {
+      x: currentMode.fnParams.x + Math.cos(angle) * c,
+      y: currentMode.fnParams.y + Math.sin(angle) * c,
+    };
+
+    points = [
+      {
+        x: origin.x,
+        y: origin.y,
+      },
+      {
+        x: oppositeCorner.x,
+        y: origin.y,
+      },
+      {
+        x: oppositeCorner.x,
+        y: oppositeCorner.y,
+      },
+      {
+        x: origin.x,
+        y: oppositeCorner.y,
       },
     ];
   } else {
@@ -568,6 +623,7 @@ function squareShape(params) {
       },
     ];
   }
+
   toolContext.clearRect(0, 0, canvas.width, canvas.height);
 
   let context;
@@ -575,8 +631,11 @@ function squareShape(params) {
     context = canvasContext;
   } else {
     context = toolContext;
+    context.beginPath();
+    context.arc(origin.x, origin.y, 5, 0, 2 * Math.PI);
+    context.stroke();
   }
-  context.beginPath(0, 0, canvas.width, canvas.height);
+  context.beginPath();
   context.moveTo(points[0].x, points[0].y);
   for (let i = 1; i < points.length; i++) {
     context.lineTo(points[i].x, points[i].y);
@@ -597,22 +656,61 @@ function triangleShape(params) {
   };
   let points;
   if (keys.ctrl) {
-    let radii = {
-      x: Math.max(1, Math.abs(origin.x - currentCoords.x)),
-      y: Math.max(1, Math.abs(origin.y - currentCoords.y)),
-    };
+    let xDist = Math.abs(currentCoords.x - origin.x);
+    let yDist = currentCoords.y - origin.y;
+    if (keys.shift) {
+      xDist = yDist;
+    }
     points = [
       {
-        x: origin.x + Math.cos((3 * Math.PI) / 2) * radii.x,
-        y: origin.y + Math.sin((3 * Math.PI) / 2) * radii.y,
+        x: origin.x,
+        y: origin.y - yDist,
       },
       {
-        x: origin.x + Math.cos((5 * Math.PI) / 6) * radii.x,
-        y: origin.y + Math.sin((5 * Math.PI) / 6) * radii.y,
+        x: origin.x + xDist,
+        y: origin.y + yDist,
       },
       {
-        x: origin.x + Math.cos(Math.PI / 6) * radii.x,
-        y: origin.y + Math.sin(Math.PI / 6) * radii.y,
+        x: origin.x - xDist,
+        y: origin.y + yDist,
+      },
+    ];
+  } else if (keys.shift) {
+    let angle = Math.atan2(
+      currentCoords.y - currentMode.fnParams.y,
+      currentCoords.x - currentMode.fnParams.x,
+    );
+    if (angle < 0) {
+      angle += 2 * Math.PI;
+    }
+    angle = snapValueArray(angle, [
+      Math.PI / 4,
+      (3 * Math.PI) / 4,
+      (5 * Math.PI) / 4,
+      (7 * Math.PI) / 4,
+    ]);
+
+    let a = Math.abs(currentCoords.y - currentMode.fnParams.y);
+    let b = a;
+    let c = Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
+
+    let oppositeCorner = {
+      x: currentMode.fnParams.x + Math.cos(angle) * c,
+      y: currentMode.fnParams.y + Math.sin(angle) * c,
+    };
+
+    points = [
+      {
+        x: origin.x,
+        y: origin.y,
+      },
+      {
+        x: oppositeCorner.x,
+        y: oppositeCorner.y,
+      },
+      {
+        x: origin.x,
+        y: oppositeCorner.y,
       },
     ];
   } else {
@@ -639,8 +737,10 @@ function triangleShape(params) {
     context = canvasContext;
   } else {
     context = toolContext;
+    context.beginPath();
+    context.arc(origin.x, origin.y, 5, 0, 2 * Math.PI);
+    context.stroke();
   }
-
   context.beginPath();
   context.moveTo(points[0].x, points[0].y);
   for (let i = 1; i < points.length; i++) {
@@ -662,12 +762,51 @@ function circleShape(params) {
   // first, and where the user's mouse is currently as long as the left mouse
   // button is being held
   let center;
+  let oppositeCorner;
   if (keys.ctrl) {
     center = {
       x: currentMode.fnParams.x,
       y: currentMode.fnParams.y,
     };
+  } else if (keys.shift) {
+    // 1) Get the angle of mouse coordinates relative to the positive x-axis
+    // then snap that angle to the nearest of these 4 angles: pi/4, 3pi/4, 5pi/4, 7pi/4.
+    // 2) From there, the center should be the snapped angle times the distance between the
+    // point where the user first clicked and the current position of the mouse
+
+    // 1)
+    let angle = Math.atan2(
+      currentCoords.y - currentMode.fnParams.y,
+      currentCoords.x - currentMode.fnParams.x,
+    );
+    if (angle < 0) {
+      angle += 2 * Math.PI;
+    }
+
+    angle = snapValueArray(angle, [
+      Math.PI / 4,
+      (3 * Math.PI) / 4,
+      (5 * Math.PI) / 4,
+      (7 * Math.PI) / 4,
+    ]);
+
+    let a = Math.abs(currentCoords.y - currentMode.fnParams.y);
+    // b = a, but it's soo unecessary, so let's assume the second summand is Math.pow(b,2)
+    let c = Math.sqrt(Math.pow(a, 2) + Math.pow(a, 2));
+
+    oppositeCorner = {
+      x: currentMode.fnParams.x + Math.cos(angle) * c,
+      y: currentMode.fnParams.y + Math.sin(angle) * c,
+    };
+
+    // 2)
+    center = {
+      x: Math.round((currentMode.fnParams.x + oppositeCorner.x) / 2),
+      y: Math.round((currentMode.fnParams.y + oppositeCorner.y) / 2),
+    };
   } else {
+    // The midpoint of the line drawn between points (currentMode.fnParams.x,currentMode.fnParams.y)
+    // and (currentCoords.x,currentCoords.y)
     center = {
       x: Math.round((currentMode.fnParams.x + currentCoords.x) / 2),
       y: Math.round((currentMode.fnParams.y + currentCoords.y) / 2),
@@ -683,6 +822,10 @@ function circleShape(params) {
     y: Math.max(1, Math.abs(center.y - currentCoords.y)),
   };
 
+  if ((keys.ctrl && keys.shift) || keys.shift) {
+    radii.x = radii.y;
+  }
+
   toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
 
   let context;
@@ -690,6 +833,9 @@ function circleShape(params) {
     context = canvasContext;
   } else {
     context = toolContext;
+    context.beginPath();
+    context.arc(center.x, center.y, 5, 0, 2 * Math.PI);
+    context.stroke();
   }
 
   context.moveTo(center.x, center.y);
@@ -710,27 +856,93 @@ function starShape(params) {
     y: currentMode.fnParams.y,
   };
 
-  // Get the max of either the number 5 or
-  // the distance between the start point and the current location of the
-  // user's mouse
-  let outerRadius = Math.round(
-    Math.max(
-      5,
-      Math.sqrt(
-        Math.pow(currentCoords.x - center.x, 2) +
-          Math.pow(currentCoords.y - center.y, 2),
-      ),
-    ),
-  );
+  let outerRadius;
+  let innerRadius;
 
-  let innerRadius = outerRadius / 2.5;
+  if (keys.ctrl) {
+    if (keys.shift) {
+      let outerDist = Math.abs(currentCoords.y - center.y);
+      let innerDist = outerDist / 2.5;
+      outerRadius = {
+        x: outerDist,
+        y: outerDist,
+      };
 
-  // Partitioning a circle into 10 different points
+      innerRadius = {
+        x: innerDist,
+        y: innerDist,
+      };
+    } else {
+      outerRadius = {
+        x: Math.abs(currentCoords.x - center.x),
+        y: Math.abs(currentCoords.y - center.y),
+      };
+
+      innerRadius = {
+        x: outerRadius.x / 2.5,
+        y: outerRadius.y / 2.5,
+      };
+    }
+  } else if (keys.shift) {
+    let angle = Math.atan2(
+      currentCoords.y - currentMode.fnParams.y,
+      currentCoords.x - currentMode.fnParams.x,
+    );
+    if (angle < 0) {
+      angle += 2 * Math.PI;
+    }
+
+    angle = snapValueArray(angle, [
+      Math.PI / 4,
+      (3 * Math.PI) / 4,
+      (5 * Math.PI) / 4,
+      (7 * Math.PI) / 4,
+    ]);
+
+    let a = Math.abs(currentCoords.y - currentMode.fnParams.y);
+    // b = a, but it's soo unecessary, so let's assume the second summand is Math.pow(b,2)
+    let c = Math.sqrt(Math.pow(a, 2) + Math.pow(a, 2));
+
+    oppositeCorner = {
+      x: currentMode.fnParams.x + Math.cos(angle) * c,
+      y: currentMode.fnParams.y + Math.sin(angle) * c,
+    };
+
+    // 2)
+    center = {
+      x: Math.round((currentMode.fnParams.x + oppositeCorner.x) / 2),
+      y: Math.round((currentMode.fnParams.y + oppositeCorner.y) / 2),
+    };
+    outerRadius = {
+      x: Math.abs(currentCoords.y - center.y),
+      y: Math.abs(currentCoords.y - center.y),
+    };
+
+    innerRadius = {
+      x: outerRadius.x / 2.5,
+      y: outerRadius.y / 2.5,
+    };
+  } else {
+    center = {
+      x: Math.round((currentMode.fnParams.x + currentCoords.x) / 2),
+      y: Math.round((currentMode.fnParams.y + currentCoords.y) / 2),
+    };
+    outerRadius = {
+      x: Math.abs(currentCoords.x - center.x),
+      y: Math.abs(currentCoords.y - center.y),
+    };
+
+    innerRadius = {
+      x: outerRadius.x / 2.5,
+      y: outerRadius.y / 2.5,
+    };
+  }
+
+  // Partition a circle into 10 different points
   // (5 for the outer radius, 5 for the inner) and making the star by drawing
-  // alternating lines between the outer radius points and the inner radius
-  // points will not yield a star whose top point is facing 'up'. Apply rotation of 270 degrees
-  // to solve this
-  let rotation = (Math.PI / 2) * 3;
+  // alternating lines between the outer radius points and the inner radius,
+  // starting with the top point (clockwise)
+  let rotation = (3 * Math.PI) / 2;
   let increments = Math.PI / 5;
   let currentX, currentY;
 
@@ -740,24 +952,27 @@ function starShape(params) {
     context = canvasContext;
   } else {
     context = toolContext;
+    context.beginPath();
+    context.arc(center.x, center.y, 5, 0, 2 * Math.PI);
+    context.stroke();
   }
 
   context.beginPath();
-  context.moveTo(center.x, center.y - outerRadius);
+  context.moveTo(center.x, center.y - outerRadius.y);
 
   for (let i = 0; i < 5; i++) {
-    currentX = center.x + Math.cos(rotation) * outerRadius;
-    currentY = center.y + Math.sin(rotation) * outerRadius;
+    currentX = center.x + Math.cos(rotation) * outerRadius.x;
+    currentY = center.y + Math.sin(rotation) * outerRadius.y;
     context.lineTo(currentX, currentY);
     rotation += increments;
 
-    currentX = center.x + Math.cos(rotation) * innerRadius;
-    currentY = center.y + Math.sin(rotation) * innerRadius;
+    currentX = center.x + Math.cos(rotation) * innerRadius.x;
+    currentY = center.y + Math.sin(rotation) * innerRadius.y;
     context.lineTo(currentX, currentY);
     rotation += increments;
   }
 
-  context.lineTo(center.x, center.y - outerRadius);
+  context.lineTo(center.x, center.y - outerRadius.y);
   context.closePath();
   context.strokeStyle = color;
   context.lineWidth = currentMode.strokeWidth;
@@ -776,25 +991,55 @@ function interpolate(a, b, t) {
   return { x: nx, y: ny };
 }
 
+/**
+ * @param {Vec2} a
+ * @param {Vec2} b
+ */
+function twoPointsDistance(a, b) {
+  return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
+}
+
+function snapValueInterval(actualValue = 0, interval = 1) {
+  if (interval == 0) {
+    return actualValue;
+  }
+  return Math.round(actualValue / interval) * interval;
+}
+
+function snapValueArray(actualValue = 0, validValues = []) {
+  if (validValues.length == 0) {
+    return actualValue;
+  }
+  if (validValues.length == 1) {
+    return validValues[0];
+  }
+  let minDiff = Math.abs(actualValue - validValues[0]);
+  let snappedValue = validValues[0];
+  let currentDiff;
+  for (let i = 0; i < validValues.length; i++) {
+    currentDiff = Math.abs(actualValue - validValues[i]);
+    if (currentDiff < minDiff) {
+      minDiff = currentDiff;
+      snappedValue = validValues[i];
+    }
+  }
+
+  return snappedValue;
+}
+
 function redoAction() {
-  console.log("Before Redo: ", changeStack, changeStateIndex);
   if (changeStateIndex == changeStack.length - 1 || changeStack.length == 1) {
-    console.log("redoAction(): returning");
     return;
   }
   canvasContext.putImageData(changeStack[++changeStateIndex], 0, 0);
-  console.log("After Redo: ", changeStack, changeStateIndex);
 }
 
 function undoAction() {
-  console.log("Before Undo: ", changeStack, changeStateIndex);
   if (changeStateIndex == 0) {
-    console.log("undoAction(): returning");
     return;
   }
 
   canvasContext.putImageData(changeStack[--changeStateIndex], 0, 0);
-  console.log("After Undo: ", changeStack, changeStateIndex);
 }
 
 /**
