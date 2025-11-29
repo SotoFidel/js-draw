@@ -1,10 +1,10 @@
 /**
- * @type HtmlCanvasElement
+ * @type HTMLCanvasElement
  */
 let canvas;
 
 /**
- * @type HtmlCanvasElement
+ * @type HTMLCanvasElement
  */
 let toolCanvas;
 const canvasContainer = document.getElementById("canvasContainer");
@@ -48,6 +48,8 @@ let keys = {
   ctrl: false,
   shift: false,
   alt: false,
+  enter: false,
+  escape: false,
 };
 
 /**
@@ -234,6 +236,161 @@ let modes = {
     mouseUpdateCallback: () => {
       modes.Star.fn();
     },
+  },
+  Polygon: {
+    mode: "Polygon",
+    buttonId: "polygon-btn",
+    fn: () => {
+      polygonShape(currentMode.fnParams);
+    },
+    strokeWidth: 5,
+    fnParams: {
+      x: 0,
+      y: 0,
+      canCommit: false,
+      commit: false,
+      points: [],
+      strokeWidth: 5,
+    },
+    mouseUpdateCallback: () => {
+      if (
+        currentMode.fnParams.points.length >= 2 &&
+        twoPointsDistance(currentCoords, currentMode.fnParams.points[0]) < 10
+      ) {
+        // currentMode.commit = true;
+        // toolContext.beginPath();
+        // toolContext.arc(
+        //   currentMode.fnParams.points[0].x,
+        //   currentMode.fnParams.points[0].y,
+        //   40,
+        //   0,
+        //   2 * Math.PI,
+        // );
+        currentCoords.x = currentMode.fnParams.points[0].x;
+        currentCoords.y = currentMode.fnParams.points[0].y;
+        currentMode.fnParams.canCommit = true;
+        // toolContext.strokeWidth = 2;
+        // toolContext.stroke();
+      } else {
+        currentMode.fnParams.canCommit = false;
+      }
+      currentMode.fn();
+      // if (currentMode.fnParams.points.length > 0) {
+      //   toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+      //   toolContext.beginPath();
+      //   toolContext.moveTo(
+      //     currentMode.fnParams.points[0].x,
+      //     currentMode.fnParams.points[0].y,
+      //   );
+      //   for (let i = 0; i < currentMode.fnParams.points.length; i++) {
+      //     toolContext.lineTo(
+      //       currentMode.fnParams.points[i].x,
+      //       currentMode.fnParams.points[i].y,
+      //     );
+      //   }
+      //   toolContext.stroke();
+      //   if (
+      //     twoPointsDistance(currentCoords, currentMode.fnParams.points[0]) < 10
+      //   ) {
+      //     currentMode.fnParams.commit = true;
+      //     toolContext.beginPath();
+      //     toolContext.arc(
+      //       currentMode.fnParams.points[0].x,
+      //       currentMode.fnParams.points[0].y,
+      //       40,
+      //       0,
+      //       2 * Math.PI,
+      //     );
+      //     currentCoords.x = currentMode.fnParams.points[0].x;
+      //     currentCoords.y = currentMode.fnParams.points[0].y;
+      //     toolContext.stroke();
+      //   } else {
+      //     currentMode.fnParams.commit = false;
+      //   }
+      //   toolContext.beginPath();
+      //   toolContext.moveTo(
+      //     currentMode.fnParams.points[currentMode.fnParams.points.length - 1].x,
+      //     currentMode.fnParams.points[currentMode.fnParams.points.length - 1].y,
+      //   );
+      //   toolContext.lineTo(currentCoords.x, currentCoords.y);
+      //   toolContext.lineWidth = currentMode.strokeWidth;
+      //   canvasContext.lineWidth = currentMode.strokeWidth;
+      //   toolContext.stroke();
+    },
+    clickCallback: () => {
+      currentMode.fnParams.points.push({
+        x: currentCoords.x,
+        y: currentCoords.y,
+      });
+      if (currentMode.fnParams.canCommit) {
+        currentMode.fnParams.commit = true;
+      }
+      currentMode.fn();
+      // let context;
+      // if (currentMode.fnParams.commit) {
+      //   context = canvasContext;
+      // } else {
+      //   context = toolContext;
+      // }
+      //
+      // context.moveTo(
+      //   currentMode.fnParams.points[0].x,
+      //   currentMode.fnParams.points[0].y,
+      // );
+      // toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+      // context.beginPath();
+      // for (let i = 0; i < currentMode.fnParams.points.length; i++) {
+      //   context.lineTo(
+      //     currentMode.fnParams.points[i].x,
+      //     currentMode.fnParams.points[i].y,
+      //   );
+      // }
+      // context.stroke();
+      //
+      // if (currentMode.fnParams.commit) {
+      //   currentMode.fnParams.points = [];
+      //   currentMode.fnParams.commit = false;
+      // }
+
+      // canvasContext.beginPath();
+      // canvasContext.arc(currentCoords.x, currentCoords.y, 5, 0, 2 * Math.PI);
+      // canvasContext.stroke();
+    },
+    setupCallback: () => {
+      // document.addEventListener("keydown", (event) => {
+      //   console.log(event.code);
+      //   // if (event.code == "Escape") {
+      //   //   currentMode.fnParams.points = [];
+      //   //   toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+      //   //   return;
+      //   // }
+      //   currentMode.fnParams.commit = event.code == "Enter";
+      //   if (currentMode.fnParams.commit) {
+      //     canvasContext.moveTo(
+      //       currentMode.fnParams.points[0].x,
+      //       currentMode.fnParams.points[0].y,
+      //     );
+      //     toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+      //     canvasContext.beginPath();
+      //     for (let i = 0; i < currentMode.fnParams.points.length; i++) {
+      //       canvasContext.lineTo(
+      //         currentMode.fnParams.points[i].x,
+      //         currentMode.fnParams.points[i].y,
+      //       );
+      //     }
+      //     canvasContext.lineTo(
+      //       currentMode.fnParams.points[0].x,
+      //       currentMode.fnParams.points[0].y,
+      //     );
+      //     toolContext.lineWidth = currentMode.strokeWidth;
+      //     canvasContext.lineWidth = currentMode.strokeWidth;
+      //     canvasContext.stroke();
+      //     currentMode.fnParams.points = [];
+      //   }
+      // });
+      // canvas.addEventListener("click", (event) => {});
+    },
+    switchCallback: () => {},
   },
 };
 
@@ -979,6 +1136,43 @@ function starShape(params) {
   context.stroke();
 }
 
+function polygonShape(params) {
+  if (keys.escape) {
+    params.points = [];
+    toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+    return;
+  }
+  if (params.points.length == 0) {
+    return;
+  }
+  toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+  let context;
+  if (params.canCommit) {
+    toolContext.beginPath();
+    toolContext.arc(
+      currentMode.fnParams.points[0].x,
+      currentMode.fnParams.points[0].y,
+      10,
+      0,
+      2 * Math.PI,
+    );
+    toolContext.strokeWidth = 2;
+    toolContext.stroke();
+  }
+  if (params.commit) {
+    context = canvasContext;
+  } else {
+    context = toolContext;
+  }
+  context.beginPath();
+  context.moveTo(params.points[0].x, params.points[0].y);
+  for (let i = 0; i < params.points.length; i++) {
+    context.lineTo(params.points[i].x, params.points[i].y);
+  }
+  context.lineTo(currentCoords.x, currentCoords.y);
+  context.stroke();
+}
+
 // points A and B, frac between 0 and 1
 /**
  * @param {Vec2} a
@@ -1123,11 +1317,6 @@ function setupCanvasEvents() {
       }
     }
 
-    // currentMode.fnParams = {
-    //   x: Math.round(event.x - canvasOffsetX),
-    //   y: Math.round(event.y - canvasOffsetY),
-    // };
-
     currentMode.fnParams.x = Math.round(event.x - canvasOffsetX);
     currentMode.fnParams.y = Math.round(event.y - canvasOffsetY);
 
@@ -1147,6 +1336,12 @@ function setupCanvasEvents() {
       canvasContext.getImageData(0, 0, canvas.width, canvas.height),
     );
     changeStateIndex = changeStack.length - 1;
+  });
+
+  canvas.addEventListener("click", () => {
+    if (currentMode.clickCallback) {
+      currentMode.clickCallback();
+    }
   });
 
   canvas.addEventListener("mouseleave", () => {
@@ -1171,6 +1366,8 @@ function setupKeyEvents() {
     keys.ctrl = event.ctrlKey;
     keys.shift = event.shiftKey;
     keys.alt = event.altKey;
+    keys.escape = event.code == "Escape";
+    keys.enter = event.code == "Enter";
     switch (event.key) {
       case "b":
         isClicking = false;
@@ -1213,6 +1410,12 @@ function setupKeyEvents() {
     keys.ctrl = event.ctrlKey;
     keys.shift = event.shiftKey;
     keys.alt = event.altKey;
+    if (event.code == "Escape") {
+      keys.escape = false;
+    }
+    if (event.code == "Enter") {
+      keys.enter = false;
+    }
   });
 }
 
