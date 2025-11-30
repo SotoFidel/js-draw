@@ -257,65 +257,13 @@ let modes = {
         currentMode.fnParams.points.length >= 2 &&
         twoPointsDistance(currentCoords, currentMode.fnParams.points[0]) < 10
       ) {
-        // currentMode.commit = true;
-        // toolContext.beginPath();
-        // toolContext.arc(
-        //   currentMode.fnParams.points[0].x,
-        //   currentMode.fnParams.points[0].y,
-        //   40,
-        //   0,
-        //   2 * Math.PI,
-        // );
         currentCoords.x = currentMode.fnParams.points[0].x;
         currentCoords.y = currentMode.fnParams.points[0].y;
         currentMode.fnParams.canCommit = true;
-        // toolContext.strokeWidth = 2;
-        // toolContext.stroke();
       } else {
         currentMode.fnParams.canCommit = false;
       }
       currentMode.fn();
-      // if (currentMode.fnParams.points.length > 0) {
-      //   toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
-      //   toolContext.beginPath();
-      //   toolContext.moveTo(
-      //     currentMode.fnParams.points[0].x,
-      //     currentMode.fnParams.points[0].y,
-      //   );
-      //   for (let i = 0; i < currentMode.fnParams.points.length; i++) {
-      //     toolContext.lineTo(
-      //       currentMode.fnParams.points[i].x,
-      //       currentMode.fnParams.points[i].y,
-      //     );
-      //   }
-      //   toolContext.stroke();
-      //   if (
-      //     twoPointsDistance(currentCoords, currentMode.fnParams.points[0]) < 10
-      //   ) {
-      //     currentMode.fnParams.commit = true;
-      //     toolContext.beginPath();
-      //     toolContext.arc(
-      //       currentMode.fnParams.points[0].x,
-      //       currentMode.fnParams.points[0].y,
-      //       40,
-      //       0,
-      //       2 * Math.PI,
-      //     );
-      //     currentCoords.x = currentMode.fnParams.points[0].x;
-      //     currentCoords.y = currentMode.fnParams.points[0].y;
-      //     toolContext.stroke();
-      //   } else {
-      //     currentMode.fnParams.commit = false;
-      //   }
-      //   toolContext.beginPath();
-      //   toolContext.moveTo(
-      //     currentMode.fnParams.points[currentMode.fnParams.points.length - 1].x,
-      //     currentMode.fnParams.points[currentMode.fnParams.points.length - 1].y,
-      //   );
-      //   toolContext.lineTo(currentCoords.x, currentCoords.y);
-      //   toolContext.lineWidth = currentMode.strokeWidth;
-      //   canvasContext.lineWidth = currentMode.strokeWidth;
-      //   toolContext.stroke();
     },
     clickCallback: () => {
       currentMode.fnParams.points.push({
@@ -324,73 +272,20 @@ let modes = {
       });
       if (currentMode.fnParams.canCommit) {
         currentMode.fnParams.commit = true;
+        currentMode.fn();
+        currentMode.fnParams.commit = false;
+        currentMode.fnParams.canCommit = false;
+        currentMode.fnParams.points = [];
+      } else {
+        currentMode.fn();
       }
-      currentMode.fn();
-      // let context;
-      // if (currentMode.fnParams.commit) {
-      //   context = canvasContext;
-      // } else {
-      //   context = toolContext;
-      // }
-      //
-      // context.moveTo(
-      //   currentMode.fnParams.points[0].x,
-      //   currentMode.fnParams.points[0].y,
-      // );
-      // toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
-      // context.beginPath();
-      // for (let i = 0; i < currentMode.fnParams.points.length; i++) {
-      //   context.lineTo(
-      //     currentMode.fnParams.points[i].x,
-      //     currentMode.fnParams.points[i].y,
-      //   );
-      // }
-      // context.stroke();
-      //
-      // if (currentMode.fnParams.commit) {
-      //   currentMode.fnParams.points = [];
-      //   currentMode.fnParams.commit = false;
-      // }
-
-      // canvasContext.beginPath();
-      // canvasContext.arc(currentCoords.x, currentCoords.y, 5, 0, 2 * Math.PI);
-      // canvasContext.stroke();
     },
     setupCallback: () => {
-      // document.addEventListener("keydown", (event) => {
-      //   console.log(event.code);
-      //   // if (event.code == "Escape") {
-      //   //   currentMode.fnParams.points = [];
-      //   //   toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
-      //   //   return;
-      //   // }
-      //   currentMode.fnParams.commit = event.code == "Enter";
-      //   if (currentMode.fnParams.commit) {
-      //     canvasContext.moveTo(
-      //       currentMode.fnParams.points[0].x,
-      //       currentMode.fnParams.points[0].y,
-      //     );
-      //     toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
-      //     canvasContext.beginPath();
-      //     for (let i = 0; i < currentMode.fnParams.points.length; i++) {
-      //       canvasContext.lineTo(
-      //         currentMode.fnParams.points[i].x,
-      //         currentMode.fnParams.points[i].y,
-      //       );
-      //     }
-      //     canvasContext.lineTo(
-      //       currentMode.fnParams.points[0].x,
-      //       currentMode.fnParams.points[0].y,
-      //     );
-      //     toolContext.lineWidth = currentMode.strokeWidth;
-      //     canvasContext.lineWidth = currentMode.strokeWidth;
-      //     canvasContext.stroke();
-      //     currentMode.fnParams.points = [];
-      //   }
-      // });
-      // canvas.addEventListener("click", (event) => {});
+      modes.Polygon.fnParams.points = [];
     },
-    switchCallback: () => {},
+    switchCallback: () => {
+      modes.Polygon.fnParams.points = [];
+    },
   },
 };
 
@@ -405,7 +300,6 @@ function clearCanvas() {
 function draw() {
   toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
   toolContext.beginPath();
-  // tctx.rect(newCoords.x, newCoords.y, currentMode.strokeWidth, currentMode.strokeWidth);
   toolContext.arc(
     Math.max(currentCoords.x, 0),
     Math.max(currentCoords.y, 0),
@@ -456,7 +350,6 @@ function erase() {
         currentMode.strokeWidth,
       );
     }
-    // ctx.clearRect(Math.max(newCoords.x - 5, 0), Math.max(newCoords.y - 5, 0), 10, 10);
   }
   canvasContext.fillStyle = color;
 }
@@ -582,10 +475,6 @@ function bucketFill() {
     bdiff = Math.abs(sourceColorRgb[2] - currentPixel[2]);
 
     let valid = rdiff <= 5 && gdiff <= 5 && bdiff <= 5;
-    // x >= 0 &&
-    // x < canvas.width &&
-    // y >= 0 &&
-    // y < canvas.height;
 
     if (valid) {
       validColors.push(currentPixelHex);
@@ -1147,7 +1036,7 @@ function polygonShape(params) {
   }
   toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
   let context;
-  if (params.canCommit) {
+  if (params.canCommit && !params.commit) {
     toolContext.beginPath();
     toolContext.arc(
       currentMode.fnParams.points[0].x,
@@ -1156,7 +1045,7 @@ function polygonShape(params) {
       0,
       2 * Math.PI,
     );
-    toolContext.strokeWidth = 2;
+    toolContext.lineWidth = 2;
     toolContext.stroke();
   }
   if (params.commit) {
@@ -1170,6 +1059,7 @@ function polygonShape(params) {
     context.lineTo(params.points[i].x, params.points[i].y);
   }
   context.lineTo(currentCoords.x, currentCoords.y);
+  context.lineWidth = currentMode.strokeWidth;
   context.stroke();
 }
 
