@@ -1,10 +1,10 @@
 /**
- * @type HtmlCanvasElement
+ * @type HTMLCanvasElement
  */
 let canvas;
 
 /**
- * @type HtmlCanvasElement
+ * @type HTMLCanvasElement
  */
 let toolCanvas;
 const canvasContainer = document.getElementById("canvasContainer");
@@ -48,6 +48,13 @@ let keys = {
   ctrl: false,
   shift: false,
   alt: false,
+  enter: false,
+  escape: false,
+};
+
+let mouse = {
+  left: false,
+  right: false,
 };
 
 /**
@@ -64,7 +71,10 @@ let modes = {
     mouseUpdateCallback: () => {
       modes.Drawing.fn();
     },
-    fnParams: null,
+    fnParams: {
+      x: 0,
+      y: 0,
+    },
     mouseUpCallback: null,
   },
   Erasing: {
@@ -235,6 +245,74 @@ let modes = {
       modes.Star.fn();
     },
   },
+  Polygon: {
+    mode: "Polygon",
+    buttonId: "polygon-btn",
+    fn: () => {
+      polygonShape(currentMode.fnParams);
+    },
+    strokeWidth: 5,
+    fnParams: {
+      x: 0,
+      y: 0,
+      canCommit: false,
+      commit: false,
+      points: [],
+      strokeWidth: 5,
+    },
+    mouseUpdateCallback: () => {
+      if (
+        currentMode.fnParams.points.length >= 2 &&
+        twoPointsDistance(currentCoords, currentMode.fnParams.points[0]) < 10
+      ) {
+        currentCoords.x = currentMode.fnParams.points[0].x;
+        currentCoords.y = currentMode.fnParams.points[0].y;
+        currentMode.fnParams.canCommit = true;
+      } else {
+        currentMode.fnParams.canCommit = false;
+      }
+      currentMode.fn();
+    },
+    clickCallback: () => {
+      currentMode.fnParams.points.push({
+        x: currentCoords.x,
+        y: currentCoords.y,
+      });
+      if (currentMode.fnParams.canCommit) {
+        currentMode.fnParams.commit = true;
+        currentMode.fn();
+        currentMode.fnParams.commit = false;
+        currentMode.fnParams.canCommit = false;
+        currentMode.fnParams.points = [];
+      } else {
+        currentMode.fn();
+      }
+    },
+    keydownCallback: () => {
+      // TODO: set escape and enter key logic here instead of the polygon
+      // function.
+      if (keys.escape) {
+        currentMode.fnParams.points = [];
+        toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+        return;
+      }
+      if (keys.enter && currentMode.fnParams.points.length >= 2) {
+        currentMode.fnParams.commit = true;
+        currentMode.fn();
+        currentMode.fnParams.commit = false;
+        currentMode.fnParams.canCommit = false;
+        currentMode.fnParams.points = [];
+        return;
+      }
+      currentMode.fn();
+    },
+    setupCallback: () => {
+      modes.Polygon.fnParams.points = [];
+    },
+    switchCallback: () => {
+      modes.Polygon.fnParams.points = [];
+    },
+  },
 };
 
 let currentMode = modes.Drawing;
@@ -248,7 +326,6 @@ function clearCanvas() {
 function draw() {
   toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
   toolContext.beginPath();
-  // tctx.rect(newCoords.x, newCoords.y, currentMode.strokeWidth, currentMode.strokeWidth);
   toolContext.arc(
     Math.max(currentCoords.x, 0),
     Math.max(currentCoords.y, 0),
@@ -258,7 +335,7 @@ function draw() {
   );
   toolContext.stroke();
 
-  if (isClicking) {
+  if (mouse.left) {
     canvasContext.beginPath();
     let nc;
     for (let i = 0; i <= 1; i += 0.02) {
@@ -299,7 +376,6 @@ function erase() {
         currentMode.strokeWidth,
       );
     }
-    // ctx.clearRect(Math.max(newCoords.x - 5, 0), Math.max(newCoords.y - 5, 0), 10, 10);
   }
   canvasContext.fillStyle = color;
 }
@@ -425,10 +501,6 @@ function bucketFill() {
     bdiff = Math.abs(sourceColorRgb[2] - currentPixel[2]);
 
     let valid = rdiff <= 5 && gdiff <= 5 && bdiff <= 5;
-    // x >= 0 &&
-    // x < canvas.width &&
-    // y >= 0 &&
-    // y < canvas.height;
 
     if (valid) {
       validColors.push(currentPixelHex);
@@ -979,6 +1051,56 @@ function starShape(params) {
   context.stroke();
 }
 
+function polygonShape(params) {
+  if (params.points.length == 0) {
+    return;
+  }
+  // TODO: Add enter key functionality
+  // When the enter key is pressed, there should be a line drawn from the
+  // last point in the points arrray to the first point in the points array.
+  // Then, the resuling polygon should be committed to the main canvas
+  toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+  let context;
+  if (params.canCommit && !params.commit) {
+    toolContext.beginPath();
+    toolContext.arc(
+      currentMode.fnParams.points[0].x,
+      currentMode.fnParams.points[0].y,
+      10,
+      0,
+      2 * Math.PI,
+    );
+    toolContext.lineWidth = 2;
+    toolContext.stroke();
+  }
+  if (params.commit) {
+    context = canvasContext;
+  } else {
+    context = toolContext;
+  }
+  context.beginPath();
+  context.moveTo(params.points[0].x, params.points[0].y);
+  for (let i = 0; i < params.points.length; i++) {
+    context.lineTo(params.points[i].x, params.points[i].y);
+  }
+  if (!params.commit) {
+    context.lineTo(currentCoords.x, currentCoords.y);
+  }
+  if (params.commit || params.canCommit) {
+    context.closePath();
+  }
+  // if (!params.commit) {
+  //   context.lineTo(currentCoords.x, currentCoords.y);
+  //   if (params.canCommit) {
+  //     context.closePath();
+  //   }
+  // } else if (params.commit) {
+  //   context.closePath();
+  // }
+  context.lineWidth = currentMode.strokeWidth;
+  context.stroke();
+}
+
 // points A and B, frac between 0 and 1
 /**
  * @param {Vec2} a
@@ -1094,10 +1216,12 @@ function createCanvas() {
   canvasContext.fillRect(0, 0, canvas.width, canvas.height);
   canvasContext.lineWidth = 0;
   canvasContext.fillStyle = "black";
+  canvasContext.lineJoin = "round";
 
   toolContext = toolCanvas.getContext("2d", { willReadFrequently: true });
   toolContext.lineWidth = 0;
   toolContext.fillStyle = "black";
+  toolContext.lineJoin = "round";
 
   changeStack.push(
     canvasContext.getImageData(0, 0, canvas.width, canvas.height),
@@ -1107,8 +1231,10 @@ function createCanvas() {
 
 function setupCanvasEvents() {
   canvas.addEventListener("mousedown", (event) => {
-    // left click to perform action
-    if (event.buttons != 1) {
+    mouse.left = event.button == 0;
+    mouse.right = event.button == 2;
+
+    if (!mouse.left) {
       return;
     }
 
@@ -1123,18 +1249,15 @@ function setupCanvasEvents() {
       }
     }
 
-    // currentMode.fnParams = {
-    //   x: Math.round(event.x - canvasOffsetX),
-    //   y: Math.round(event.y - canvasOffsetY),
-    // };
-
     currentMode.fnParams.x = Math.round(event.x - canvasOffsetX);
     currentMode.fnParams.y = Math.round(event.y - canvasOffsetY);
 
     currentMode.fn();
   });
 
-  canvas.addEventListener("mouseup", () => {
+  canvas.addEventListener("mouseup", (event) => {
+    mouse.left = !(event.button == 0);
+    mouse.right = !(event.button == 0);
     isClicking = false;
 
     // Mainly for shape modes. When we leave the mouse up,
@@ -1147,6 +1270,12 @@ function setupCanvasEvents() {
       canvasContext.getImageData(0, 0, canvas.width, canvas.height),
     );
     changeStateIndex = changeStack.length - 1;
+  });
+
+  canvas.addEventListener("click", () => {
+    if (currentMode.clickCallback) {
+      currentMode.clickCallback();
+    }
   });
 
   canvas.addEventListener("mouseleave", () => {
@@ -1171,6 +1300,8 @@ function setupKeyEvents() {
     keys.ctrl = event.ctrlKey;
     keys.shift = event.shiftKey;
     keys.alt = event.altKey;
+    keys.escape = event.code == "Escape";
+    keys.enter = event.code == "Enter";
     switch (event.key) {
       case "b":
         isClicking = false;
@@ -1208,11 +1339,20 @@ function setupKeyEvents() {
       default:
         break;
     }
+    if (currentMode.keydownCallback) {
+      currentMode.keydownCallback();
+    }
   });
   document.addEventListener("keyup", (event) => {
     keys.ctrl = event.ctrlKey;
     keys.shift = event.shiftKey;
     keys.alt = event.altKey;
+    if (event.code == "Escape") {
+      keys.escape = false;
+    }
+    if (event.code == "Enter") {
+      keys.enter = false;
+    }
   });
 }
 
