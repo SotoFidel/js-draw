@@ -52,6 +52,11 @@ let keys = {
   escape: false,
 };
 
+let mouse = {
+  left: false,
+  right: false,
+};
+
 /**
  * The app knows what it needs to do based on what mode it is in.
  * So effectively this is a state machine whose state changes are determined by
@@ -66,7 +71,10 @@ let modes = {
     mouseUpdateCallback: () => {
       modes.Drawing.fn();
     },
-    fnParams: null,
+    fnParams: {
+      x: 0,
+      y: 0,
+    },
     mouseUpCallback: null,
   },
   Erasing: {
@@ -280,6 +288,24 @@ let modes = {
         currentMode.fn();
       }
     },
+    keydownCallback: () => {
+      // TODO: set escape and enter key logic here instead of the polygon
+      // function.
+      if (keys.escape) {
+        currentMode.fnParams.points = [];
+        toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+        return;
+      }
+      if (keys.enter && currentMode.fnParams.points.length >= 2) {
+        currentMode.fnParams.commit = true;
+        currentMode.fn();
+        currentMode.fnParams.commit = false;
+        currentMode.fnParams.canCommit = false;
+        currentMode.fnParams.points = [];
+        return;
+      }
+      currentMode.fn();
+    },
     setupCallback: () => {
       modes.Polygon.fnParams.points = [];
     },
@@ -309,7 +335,7 @@ function draw() {
   );
   toolContext.stroke();
 
-  if (isClicking) {
+  if (mouse.left) {
     canvasContext.beginPath();
     let nc;
     for (let i = 0; i <= 1; i += 0.02) {
@@ -1026,14 +1052,13 @@ function starShape(params) {
 }
 
 function polygonShape(params) {
-  if (keys.escape) {
-    params.points = [];
-    toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
-    return;
-  }
   if (params.points.length == 0) {
     return;
   }
+  // TODO: Add enter key functionality
+  // When the enter key is pressed, there should be a line drawn from the
+  // last point in the points arrray to the first point in the points array.
+  // Then, the resuling polygon should be committed to the main canvas
   toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
   let context;
   if (params.canCommit && !params.commit) {
@@ -1058,7 +1083,20 @@ function polygonShape(params) {
   for (let i = 0; i < params.points.length; i++) {
     context.lineTo(params.points[i].x, params.points[i].y);
   }
-  context.lineTo(currentCoords.x, currentCoords.y);
+  if (!params.commit) {
+    context.lineTo(currentCoords.x, currentCoords.y);
+  }
+  if (params.commit || params.canCommit) {
+    context.closePath();
+  }
+  // if (!params.commit) {
+  //   context.lineTo(currentCoords.x, currentCoords.y);
+  //   if (params.canCommit) {
+  //     context.closePath();
+  //   }
+  // } else if (params.commit) {
+  //   context.closePath();
+  // }
   context.lineWidth = currentMode.strokeWidth;
   context.stroke();
 }
@@ -1178,10 +1216,12 @@ function createCanvas() {
   canvasContext.fillRect(0, 0, canvas.width, canvas.height);
   canvasContext.lineWidth = 0;
   canvasContext.fillStyle = "black";
+  canvasContext.lineJoin = "round";
 
   toolContext = toolCanvas.getContext("2d", { willReadFrequently: true });
   toolContext.lineWidth = 0;
   toolContext.fillStyle = "black";
+  toolContext.lineJoin = "round";
 
   changeStack.push(
     canvasContext.getImageData(0, 0, canvas.width, canvas.height),
@@ -1191,8 +1231,10 @@ function createCanvas() {
 
 function setupCanvasEvents() {
   canvas.addEventListener("mousedown", (event) => {
-    // left click to perform action
-    if (event.buttons != 1) {
+    mouse.left = event.button == 0;
+    mouse.right = event.button == 2;
+
+    if (!mouse.left) {
       return;
     }
 
@@ -1213,7 +1255,9 @@ function setupCanvasEvents() {
     currentMode.fn();
   });
 
-  canvas.addEventListener("mouseup", () => {
+  canvas.addEventListener("mouseup", (event) => {
+    mouse.left = !(event.button == 0);
+    mouse.right = !(event.button == 0);
     isClicking = false;
 
     // Mainly for shape modes. When we leave the mouse up,
@@ -1294,6 +1338,9 @@ function setupKeyEvents() {
         break;
       default:
         break;
+    }
+    if (currentMode.keydownCallback) {
+      currentMode.keydownCallback();
     }
   });
   document.addEventListener("keyup", (event) => {
