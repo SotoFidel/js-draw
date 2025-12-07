@@ -19,7 +19,6 @@ let canvasContext;
  */
 let toolContext;
 
-let isClicking = false;
 let canvasOffsetX = 0;
 let canvasOffsetY = 0;
 let changeStack = [];
@@ -68,33 +67,64 @@ let modes = {
     fn: draw,
     strokeWidth: 5,
     buttonId: "draw-btn",
-    mouseUpdateCallback: () => {
+    onMouseDown: () => {
+      modes.Drawing.fn();
+    },
+    onMouseMove: () => {
+      modes.Drawing.fn();
+    },
+    onMouseUp: () => {
+      currentMode.fnParams.commit = true;
+    },
+    setupCallback: () => {
+      mouse.left = false;
       modes.Drawing.fn();
     },
     fnParams: {
       x: 0,
       y: 0,
+      commit: false,
     },
-    mouseUpCallback: null,
   },
   Erasing: {
     mode: "Erasing",
     fn: erase,
     strokeWidth: 5,
     buttonId: "erase-btn",
-    mouseUpdateCallback: () => {
+    onMouseDown: () => {
       modes.Erasing.fn();
     },
-    fnParams: null,
-    mouseUpCallback: null,
+    onMouseMove: () => {
+      modes.Erasing.fn();
+    },
+    onMouseUp: () => {
+      currentMode.fnParams.commit = true;
+    },
+    setupCallback: () => {
+      mouse.left = false;
+      modes.Erasing.fn();
+    },
+    fnParams: {
+      x: 0,
+      y: 0,
+      commit: false,
+    },
   },
   Filling: {
     mode: "Filling",
     fn: bucketFill,
     buttonId: "fill-btn",
-    mouseUpdateCallback: null,
-    fnParams: null,
-    mouseUpCallback: null,
+    onMouseMove: null,
+    fnParams: {
+      x: 0,
+      y: 0,
+      commit: false,
+    },
+    onMouseDown: () => {
+      modes.Filling.fn();
+      currentMode.fnParams.commit = true;
+    },
+    onMouseUp: null,
     setupCallback: () => {
       document.querySelector("#size").disabled = true;
       document.querySelector("#sizeVal").disabled = true;
@@ -107,17 +137,19 @@ let modes = {
   Line: {
     mode: "Line",
     fn: () => {
-      lineShape(currentMode.fnParams);
+      lineShape(modes.Line.fnParams);
     },
     strokeWidth: 5,
     buttonId: "line-btn",
-    mouseUpdateCallback: () => {
+    onMouseMove: () => {
       modes.Line.fn();
     },
-    mouseUpCallback: () => {
+    onMouseDown: () => {
+      lineShape(modes.Line.fnParams);
+    },
+    onMouseUp: () => {
       currentMode.fnParams.commit = true;
       lineShape(currentMode.fnParams);
-      currentMode.fnParams.commit = false;
     },
     setupCallback: () => {
       canvasContext.lineWidth = modes.Line.strokeWidth;
@@ -141,13 +173,15 @@ let modes = {
     },
     strokeWidth: 5,
     buttonId: "square-btn",
-    mouseUpdateCallback: () => {
+    onMouseDown: () => {
+      lineShape(modes.Line.fnParams);
+    },
+    onMouseMove: () => {
       modes.Square.fn();
     },
-    mouseUpCallback: () => {
+    onMouseUp: () => {
       currentMode.fnParams.commit = true;
       squareShape(currentMode.fnParams);
-      currentMode.fnParams.commit = false;
     },
     fnParams: {
       x: 0,
@@ -175,13 +209,15 @@ let modes = {
     },
     strokeWidth: 5,
     buttonId: "triangle-btn",
-    mouseUpdateCallback: () => {
+    onMouseDown: () => {
       triangleShape(currentMode.fnParams);
     },
-    mouseUpCallback: () => {
+    onMouseMove: () => {
+      triangleShape(currentMode.fnParams);
+    },
+    onMouseUp: () => {
       currentMode.fnParams.commit = true;
       triangleShape(currentMode.fnParams);
-      currentMode.fnParams.commit = false;
     },
     fnParams: {
       x: 0,
@@ -214,12 +250,14 @@ let modes = {
       y: 0,
       commit: false,
     },
-    mouseUpCallback: () => {
+    onMouseDown: () => {
+      circleShape(currentMode.fnParams);
+    },
+    onMouseUp: () => {
       currentMode.fnParams.commit = true;
       circleShape(currentMode.fnParams);
-      currentMode.fnParams.commit = false;
     },
-    mouseUpdateCallback: () => {
+    onMouseMove: () => {
       modes.Circle.fn();
     },
   },
@@ -235,13 +273,14 @@ let modes = {
       y: 0,
       commit: false,
     },
-    mouseUpCallback: null,
-    mouseUpCallback: () => {
+    onMouseDown: () => {
+      starShape(currentMode.fnParams);
+    },
+    onMouseUp: () => {
       currentMode.fnParams.commit = true;
       starShape(currentMode.fnParams);
-      currentMode.fnParams.commit = false;
     },
-    mouseUpdateCallback: () => {
+    onMouseMove: () => {
       modes.Star.fn();
     },
   },
@@ -260,7 +299,7 @@ let modes = {
       points: [],
       strokeWidth: 5,
     },
-    mouseUpdateCallback: () => {
+    onMouseMove: () => {
       if (
         currentMode.fnParams.points.length >= 2 &&
         twoPointsDistance(currentCoords, currentMode.fnParams.points[0]) < 10
@@ -273,24 +312,29 @@ let modes = {
       }
       currentMode.fn();
     },
-    clickCallback: () => {
-      currentMode.fnParams.points.push({
-        x: currentCoords.x,
-        y: currentCoords.y,
-      });
-      if (currentMode.fnParams.canCommit) {
-        currentMode.fnParams.commit = true;
-        currentMode.fn();
-        currentMode.fnParams.commit = false;
-        currentMode.fnParams.canCommit = false;
-        currentMode.fnParams.points = [];
-      } else {
+    onMouseDown: () => {
+      if (mouse.left) {
+        currentMode.fnParams.points.push({
+          x: currentCoords.x,
+          y: currentCoords.y,
+        });
+        if (currentMode.fnParams.canCommit) {
+          currentMode.fnParams.commit = true;
+          currentMode.fn();
+          currentMode.fnParams.canCommit = false;
+          currentMode.fnParams.points = [];
+        } else {
+          currentMode.fn();
+        }
+        return;
+      }
+
+      if (mouse.right && currentMode.fnParams.points.length > 0) {
+        currentMode.fnParams.points.pop();
         currentMode.fn();
       }
     },
-    keydownCallback: () => {
-      // TODO: set escape and enter key logic here instead of the polygon
-      // function.
+    onKeydown: () => {
       if (keys.escape) {
         currentMode.fnParams.points = [];
         toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
@@ -299,9 +343,9 @@ let modes = {
       if (keys.enter && currentMode.fnParams.points.length >= 2) {
         currentMode.fnParams.commit = true;
         currentMode.fn();
-        currentMode.fnParams.commit = false;
         currentMode.fnParams.canCommit = false;
         currentMode.fnParams.points = [];
+        pushCurrentImageData();
         return;
       }
       currentMode.fn();
@@ -320,11 +364,13 @@ let currentMode = modes.Drawing;
 function clearCanvas() {
   canvasContext.fillStyle = "white";
   canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+  pushCurrentImageData();
   canvasContext.fillStyle = color;
 }
 
 function draw() {
   toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+  toolContext.fillStyle = "#ffffff55";
   toolContext.beginPath();
   toolContext.arc(
     Math.max(currentCoords.x, 0),
@@ -333,29 +379,33 @@ function draw() {
     0,
     2 * Math.PI,
   );
+  toolContext.fill();
   toolContext.stroke();
 
-  if (mouse.left) {
-    canvasContext.beginPath();
-    let nc;
-    for (let i = 0; i <= 1; i += 0.02) {
-      nc = interpolate(oldCoords, currentCoords, i);
-      canvasContext.arc(
-        Math.max(nc.x, 0),
-        Math.max(nc.y, 0),
-        currentMode.strokeWidth,
-        0,
-        2 * Math.PI,
-      );
-    }
-    canvasContext.strokeStyle = "#00000000";
-    canvasContext.fillStyle = color;
-    canvasContext.fill();
+  if (!mouse.left) {
+    return;
   }
+
+  canvasContext.beginPath();
+  let nc;
+  for (let i = 0; i <= 1; i += 0.02) {
+    nc = interpolate(oldCoords, currentCoords, i);
+    canvasContext.arc(
+      Math.max(nc.x, 0),
+      Math.max(nc.y, 0),
+      currentMode.strokeWidth,
+      0,
+      2 * Math.PI,
+    );
+  }
+  canvasContext.strokeStyle = "#00000000";
+  canvasContext.fillStyle = color;
+  canvasContext.fill();
 }
 
 function erase() {
   toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+  toolContext.fillStyle = "#ffffff55";
   toolContext.beginPath();
   toolContext.rect(
     Math.max(currentCoords.x - currentMode.strokeWidth / 2, 0),
@@ -363,19 +413,21 @@ function erase() {
     currentMode.strokeWidth,
     currentMode.strokeWidth,
   );
+  toolContext.fill();
   toolContext.stroke();
-  if (isClicking) {
-    canvasContext.fillStyle = "white";
-    let nc;
-    for (let i = 0; i <= 1; i += 0.5) {
-      nc = interpolate(oldCoords, currentCoords, i);
-      canvasContext.fillRect(
-        Math.max(nc.x - currentMode.strokeWidth / 2, 0),
-        Math.max(nc.y - currentMode.strokeWidth / 2, 0),
-        currentMode.strokeWidth,
-        currentMode.strokeWidth,
-      );
-    }
+  if (!mouse.left) {
+    return;
+  }
+  canvasContext.fillStyle = "white";
+  let nc;
+  for (let i = 0; i <= 1; i += 0.5) {
+    nc = interpolate(oldCoords, currentCoords, i);
+    canvasContext.fillRect(
+      Math.max(nc.x - currentMode.strokeWidth / 2, 0),
+      Math.max(nc.y - currentMode.strokeWidth / 2, 0),
+      currentMode.strokeWidth,
+      currentMode.strokeWidth,
+    );
   }
   canvasContext.fillStyle = color;
 }
@@ -549,7 +601,7 @@ function bucketFill() {
 }
 
 function lineShape(params) {
-  if (!isClicking && !params.commit) {
+  if (!mouse.left && !params.commit) {
     return;
   }
   const origin = {
@@ -601,7 +653,7 @@ function lineShape(params) {
 }
 
 function squareShape(params) {
-  if (!isClicking && !params.commit) {
+  if (!mouse.left && !params.commit) {
     return;
   }
   let origin = {
@@ -712,14 +764,14 @@ function squareShape(params) {
   for (let i = 1; i < points.length; i++) {
     context.lineTo(points[i].x, points[i].y);
   }
-  context.lineTo(points[0].x, points[0].y);
+  context.closePath();
   context.lineWidth = currentMode.strokeWidth;
   context.stroke();
   context.lineWidth = 1;
 }
 
 function triangleShape(params) {
-  if (!isClicking && !params.commit) {
+  if (!mouse.left && !params.commit) {
     return;
   }
   const origin = {
@@ -826,7 +878,7 @@ function triangleShape(params) {
 }
 
 function circleShape(params) {
-  if (!isClicking && !params.commit) {
+  if (!mouse.left && !params.commit) {
     return;
   }
 
@@ -919,7 +971,7 @@ function circleShape(params) {
 }
 
 function starShape(params) {
-  if (!isClicking && !params.commit) {
+  if (!mouse.left && !params.commit) {
     return;
   }
 
@@ -1052,6 +1104,7 @@ function starShape(params) {
 }
 
 function polygonShape(params) {
+  toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
   if (params.points.length == 0) {
     return;
   }
@@ -1059,7 +1112,6 @@ function polygonShape(params) {
   // When the enter key is pressed, there should be a line drawn from the
   // last point in the points arrray to the first point in the points array.
   // Then, the resuling polygon should be committed to the main canvas
-  toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
   let context;
   if (params.canCommit && !params.commit) {
     toolContext.beginPath();
@@ -1089,14 +1141,6 @@ function polygonShape(params) {
   if (params.commit || params.canCommit) {
     context.closePath();
   }
-  // if (!params.commit) {
-  //   context.lineTo(currentCoords.x, currentCoords.y);
-  //   if (params.canCommit) {
-  //     context.closePath();
-  //   }
-  // } else if (params.commit) {
-  //   context.closePath();
-  // }
   context.lineWidth = currentMode.strokeWidth;
   context.stroke();
 }
@@ -1162,6 +1206,22 @@ function undoAction() {
   }
 
   canvasContext.putImageData(changeStack[--changeStateIndex], 0, 0);
+}
+
+function pushCurrentImageData() {
+  currentMode.fnParams.commit = false;
+  // If the user decided to undo some of their changes, and afterwards
+  // began to draw/erase/etc on the board again, then erase all states on the changeStack
+  // until the current state index is the latest (last one in changeStack)
+  if (changeStateIndex < changeStack.length - 1) {
+    for (let i = changeStack.length; i > changeStateIndex + 1; i--) {
+      changeStack.pop();
+    }
+  }
+  changeStack.push(
+    canvasContext.getImageData(0, 0, canvas.width, canvas.height),
+  );
+  changeStateIndex = changeStack.length - 1;
 }
 
 /**
@@ -1230,52 +1290,54 @@ function createCanvas() {
 }
 
 function setupCanvasEvents() {
+  canvas.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+  });
   canvas.addEventListener("mousedown", (event) => {
     mouse.left = event.button == 0;
     mouse.right = event.button == 2;
 
-    if (!mouse.left) {
-      return;
-    }
-
-    isClicking = true;
-
-    // If the user decided to undo some of their changes, and afterwards
-    // began to draw/erase/etc on the board again, then erase all states on the changeStack
-    // until the current state index is the latest (last one in changeStack)
-    if (changeStateIndex < changeStack.length - 1) {
-      for (let i = changeStack.length; i > changeStateIndex + 1; i--) {
-        changeStack.pop();
-      }
-    }
+    // // TODO: Move this state change stuff elsewhere. Maybe it'll have to be moved
+    // // to each mode's mousedown/mouseup methods.
+    // // -----------------------------------------------------------------------------------
+    // // If the user decided to undo some of their changes, and afterwards
+    // // began to draw/erase/etc on the board again, then erase all states on the changeStack
+    // // until the current state index is the latest (last one in changeStack)
+    // if (changeStateIndex < changeStack.length - 1) {
+    //   for (let i = changeStack.length; i > changeStateIndex + 1; i--) {
+    //     changeStack.pop();
+    //   }
+    // }
 
     currentMode.fnParams.x = Math.round(event.x - canvasOffsetX);
     currentMode.fnParams.y = Math.round(event.y - canvasOffsetY);
 
-    currentMode.fn();
+    if (currentMode.onMouseDown) {
+      currentMode.onMouseDown();
+    }
   });
 
   canvas.addEventListener("mouseup", (event) => {
-    mouse.left = !(event.button == 0);
-    mouse.right = !(event.button == 0);
-    isClicking = false;
-
-    // Mainly for shape modes. When we leave the mouse up,
-    // we will 'commit' the shape to the main canvas instead of the overlay/tool
-    // canvas. Commit it to the main canvas and THEN update the change stack
-    if (currentMode.mouseUpCallback) {
-      currentMode.mouseUpCallback();
+    if (event.button == 0) {
+      mouse.left = false;
     }
-    changeStack.push(
-      canvasContext.getImageData(0, 0, canvas.width, canvas.height),
-    );
-    changeStateIndex = changeStack.length - 1;
-  });
-
-  canvas.addEventListener("click", () => {
-    if (currentMode.clickCallback) {
-      currentMode.clickCallback();
+    if (event.button == 2) {
+      mouse.right = false;
     }
+
+    if (currentMode.onMouseUp) {
+      currentMode.onMouseUp();
+    }
+
+    // A 'mouseup' event does not necessarily mean that we're ready to
+    // commit image data to the main canvas. This is true mainly for
+    // the multi-line polygon mode. A polygon will not be committed until the user
+    // closes the polygon.
+    if (currentMode.fnParams.commit) {
+      pushCurrentImageData();
+    }
+    console.log(changeStack);
+    console.log(changeStateIndex);
   });
 
   canvas.addEventListener("mouseleave", () => {
@@ -1289,8 +1351,8 @@ function setupCanvasEvents() {
       y: Math.max(event.y - canvasOffsetY, 0),
     };
 
-    if (currentMode.mouseUpdateCallback != null) {
-      currentMode.mouseUpdateCallback();
+    if (currentMode.onMouseMove != null) {
+      currentMode.onMouseMove();
     }
   });
 }
@@ -1304,7 +1366,7 @@ function setupKeyEvents() {
     keys.enter = event.code == "Enter";
     switch (event.key) {
       case "b":
-        isClicking = false;
+        mouse.left = false;
         setMethod("Drawing");
         break;
       case "c":
@@ -1313,17 +1375,17 @@ function setupKeyEvents() {
         }
         break;
       case "e":
-        isClicking = false;
+        mouse.left = false;
         setMethod("Erasing");
         break;
       case "E":
-        isClicking = false;
+        mouse.left = false;
         if (event.ctrlKey && event.shiftKey) {
           exportImage();
         }
         break;
       case "f":
-        isClicking = false;
+        mouse.left = false;
         setMethod("Filling");
         break;
       case "z":
@@ -1339,8 +1401,8 @@ function setupKeyEvents() {
       default:
         break;
     }
-    if (currentMode.keydownCallback) {
-      currentMode.keydownCallback();
+    if (currentMode.onKeydown) {
+      currentMode.onKeydown();
     }
   });
   document.addEventListener("keyup", (event) => {
