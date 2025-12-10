@@ -357,6 +357,31 @@ let modes = {
       modes.Polygon.fnParams.points = [];
     },
   },
+  Spray: {
+    mode: "Spray",
+    fn: spray,
+    fnParams: {
+      x: 0,
+      y: 0,
+      commit: false,
+      handlerID: null,
+    },
+    strokeWidth: 5,
+    buttonId: "spray-btn",
+    onMouseDown: () => {
+      currentMode.fnParams.handlerID = setInterval(modes.Spray.fn, 5);
+      modes.Spray.fn();
+    },
+    onMouseMove: () => {
+      if (!mouse.left) {
+        modes.Spray.fn();
+      }
+    },
+    onMouseUp: () => {
+      clearInterval(currentMode.fnParams.handlerID);
+      currentMode.fnParams.commit = true;
+    },
+  },
 };
 
 let currentMode = modes.Drawing;
@@ -1143,6 +1168,45 @@ function polygonShape(params) {
   }
   context.lineWidth = currentMode.strokeWidth;
   context.stroke();
+}
+
+function spray() {
+  toolContext.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+  toolContext.fillStyle = "#ffffff55";
+  toolContext.strokeStyle = "#000000";
+  toolContext.beginPath();
+  toolContext.arc(
+    Math.max(currentCoords.x, 0),
+    Math.max(currentCoords.y, 0),
+    currentMode.strokeWidth,
+    0,
+    2 * Math.PI,
+  );
+  toolContext.fill();
+  toolContext.stroke();
+
+  if (!mouse.left) {
+    return;
+  }
+
+  let angle = Math.random() * (2 * Math.PI);
+  let radius = Math.random() * currentMode.strokeWidth;
+  let dotAmount = Math.floor(Math.random() * (31 - 10) + 10);
+  canvasContext.fillStyle = color;
+  for (let i = 0; i < dotAmount; i++) {
+    canvasContext.beginPath();
+    canvasContext.arc(
+      currentCoords.x + Math.cos(angle) * radius,
+      currentCoords.y + Math.sin(angle) * radius,
+      Math.random(),
+      0,
+      2 * Math.PI,
+    );
+    angle = Math.random() * (2 * Math.PI);
+    radius = Math.random() * currentMode.strokeWidth + 5;
+    dotAmount = Math.floor(Math.random() * 5 + 5);
+    canvasContext.fill();
+  }
 }
 
 // points A and B, frac between 0 and 1
