@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="css/style.css" />
     <title>js-draw</title>
   </head>
   <body style="display: flex">
@@ -22,7 +22,37 @@
           <label for="size" style="font-weight: bold">Size: </label
           ><input type="number" id="sizeVal" /> <span>px</span>
         </div>
+        <button onclick="setupSignalRTest()">test signalr</button>
       </div>
+      <dialog id="dialog" style="z-index: 99">
+        <div class="container">
+          <div class="row p-1">
+            <div class="col-1">User</div>
+            <div class="col-5"><input type="text" id="userInput" /></div>
+          </div>
+          <div class="row p-1">
+            <div class="col-1">Message</div>
+            <div class="col-5">
+              <input type="text" class="w-100" id="messageInput" />
+            </div>
+          </div>
+          <div class="row p-1">
+            <div class="col-6 text-end">
+              <input type="button" id="sendButton" value="Send Message" />
+            </div>
+          </div>
+          <div class="row p-1">
+            <div class="col-6">
+              <hr />
+            </div>
+          </div>
+          <div class="row p-1">
+            <div class="col-6">
+              <ul id="messagesList"></ul>
+            </div>
+          </div>
+        </div>
+      </dialog>
       <div style="flex-grow: 1; display: flex; flex-direction: row">
         <div id="sidebar">
           <div style="display: flex; flex-direction: row">
@@ -115,5 +145,6 @@
       <!-- <footer style="background-color: lightgrey; margin-top: auto">hi</footer> -->
     </div>
   </body>
-  <script src="./index.js"></script>
+  <script src="js/signalr.min.js"></script>
+  <script src="js/index.js"></script>
 </html>
