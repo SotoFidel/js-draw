@@ -68,12 +68,27 @@ let modes = {
     strokeWidth: 5,
     buttonId: "draw-btn",
     onMouseDown: () => {
+      modes.Drawing.affectedArea.x = Math.max(
+        0,
+        currentCoords.x - currentMode.strokeWidth,
+      );
+      modes.Drawing.affectedArea.y = Math.max(
+        0,
+        currentCoords.y - currentMode.strokeWidth,
+      );
+      modes.Drawing.affectedArea.width = currentMode.strokeWidth * 2;
+      modes.Drawing.affectedArea.height = currentMode.strokeWidth * 2;
       modes.Drawing.fn();
     },
     onMouseMove: () => {
+      updateAffectedAreaHold();
       modes.Drawing.fn();
     },
     onMouseUp: () => {
+      currentMode.affectedArea.x = 0;
+      currentMode.affectedArea.y = 0;
+      currentMode.affectedArea.width = 0;
+      currentMode.affectedArea.height = 0;
       currentMode.fnParams.commit = true;
     },
     setupCallback: () => {
@@ -84,6 +99,12 @@ let modes = {
       x: 0,
       y: 0,
       commit: false,
+    },
+    affectedArea: {
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
     },
   },
   Erasing: {
@@ -92,9 +113,20 @@ let modes = {
     strokeWidth: 5,
     buttonId: "erase-btn",
     onMouseDown: () => {
+      modes.Erasing.affectedArea.x = Math.max(
+        0,
+        currentCoords.x - currentMode.strokeWidth,
+      );
+      modes.Erasing.affectedArea.y = Math.max(
+        0,
+        currentCoords.y - currentMode.strokeWidth,
+      );
+      modes.Erasing.affectedArea.width = currentMode.strokeWidth * 2;
+      modes.Erasing.affectedArea.height = currentMode.strokeWidth * 2;
       modes.Erasing.fn();
     },
     onMouseMove: () => {
+      updateAffectedAreaHold();
       modes.Erasing.fn();
     },
     onMouseUp: () => {
@@ -108,6 +140,12 @@ let modes = {
       x: 0,
       y: 0,
       commit: false,
+    },
+    affectedArea: {
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
     },
   },
   Filling: {
@@ -145,6 +183,16 @@ let modes = {
       modes.Line.fn();
     },
     onMouseDown: () => {
+      modes.Line.affectedArea.x = Math.max(
+        0,
+        currentCoords.x - currentMode.strokeWidth,
+      );
+      modes.Line.affectedArea.y = Math.max(
+        0,
+        currentCoords.y - currentMode.strokeWidth,
+      );
+      modes.Line.affectedArea.width = currentMode.strokeWidth * 2;
+      modes.Line.affectedArea.height = currentMode.strokeWidth * 2;
       lineShape(modes.Line.fnParams);
     },
     onMouseUp: () => {
@@ -155,15 +203,25 @@ let modes = {
       canvasContext.lineWidth = modes.Line.strokeWidth;
       toolContext.lineWidth = modes.Line.strokeWidth;
       canvasContext.strokeStyle = color;
+      canvasContext.lineCap = "round";
+      toolContext.lineCap = "round";
     },
     switchCallback: () => {
       canvasContext.lineWidth = 1;
       toolCanvas.lineWidth = 1;
+      canvasContext.lineCap = "butt";
+      toolContext.lineCap = "butt";
     },
     fnParams: {
       x: 0,
       y: 0,
       commit: false,
+    },
+    affectedArea: {
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
     },
   },
   Square: {
@@ -408,6 +466,17 @@ function draw() {
   toolContext.stroke();
 
   if (!mouse.left) {
+    toolContext.beginPath();
+    toolContext.rect(
+      currentMode.affectedArea.x,
+      currentMode.affectedArea.y,
+      currentMode.affectedArea.width,
+      currentMode.affectedArea.height,
+    );
+    toolContext.strokeStyle = "red";
+    // toolContext.fill();
+    toolContext.stroke();
+    toolContext.closePath();
     return;
   }
 
@@ -426,6 +495,17 @@ function draw() {
   canvasContext.strokeStyle = "#00000000";
   canvasContext.fillStyle = color;
   canvasContext.fill();
+  toolContext.beginPath();
+  toolContext.rect(
+    currentMode.affectedArea.x,
+    currentMode.affectedArea.y,
+    currentMode.affectedArea.width,
+    currentMode.affectedArea.height,
+  );
+  toolContext.strokeStyle = "red";
+  // toolContext.fill();
+  toolContext.stroke();
+  toolContext.closePath();
 }
 
 function erase() {
@@ -433,14 +513,25 @@ function erase() {
   toolContext.fillStyle = "#ffffff55";
   toolContext.beginPath();
   toolContext.rect(
-    Math.max(currentCoords.x - currentMode.strokeWidth / 2, 0),
-    Math.max(currentCoords.y - currentMode.strokeWidth / 2, 0),
-    currentMode.strokeWidth,
-    currentMode.strokeWidth,
+    Math.max(currentCoords.x - currentMode.strokeWidth, 0),
+    Math.max(currentCoords.y - currentMode.strokeWidth, 0),
+    currentMode.strokeWidth * 2,
+    currentMode.strokeWidth * 2,
   );
   toolContext.fill();
   toolContext.stroke();
   if (!mouse.left) {
+    toolContext.beginPath();
+    toolContext.rect(
+      currentMode.affectedArea.x,
+      currentMode.affectedArea.y,
+      currentMode.affectedArea.width,
+      currentMode.affectedArea.height,
+    );
+    toolContext.strokeStyle = "red";
+    // toolContext.fill();
+    toolContext.stroke();
+    toolContext.closePath();
     return;
   }
   canvasContext.fillStyle = "white";
@@ -448,13 +539,24 @@ function erase() {
   for (let i = 0; i <= 1; i += 0.5) {
     nc = interpolate(oldCoords, currentCoords, i);
     canvasContext.fillRect(
-      Math.max(nc.x - currentMode.strokeWidth / 2, 0),
-      Math.max(nc.y - currentMode.strokeWidth / 2, 0),
-      currentMode.strokeWidth,
-      currentMode.strokeWidth,
+      Math.max(nc.x - currentMode.strokeWidth, 0),
+      Math.max(nc.y - currentMode.strokeWidth, 0),
+      currentMode.strokeWidth * 2,
+      currentMode.strokeWidth * 2,
     );
   }
   canvasContext.fillStyle = color;
+  toolContext.beginPath();
+  toolContext.rect(
+    currentMode.affectedArea.x,
+    currentMode.affectedArea.y,
+    currentMode.affectedArea.width,
+    currentMode.affectedArea.height,
+  );
+  toolContext.strokeStyle = "red";
+  // toolContext.fill();
+  toolContext.stroke();
+  toolContext.closePath();
 }
 
 function exportImage() {
@@ -668,6 +770,17 @@ function lineShape(params) {
     context = toolContext;
   }
 
+  toolContext.beginPath();
+  toolContext.rect(
+    currentMode.affectedArea.x,
+    currentMode.affectedArea.y,
+    currentMode.affectedArea.width,
+    currentMode.affectedArea.height,
+  );
+  toolContext.strokeStyle = "red";
+  // toolContext.fill();
+  toolContext.stroke();
+  toolContext.closePath();
   context.beginPath();
   context.lineWidth = currentMode.strokeWidth;
   context.moveTo(origin.x, origin.y);
@@ -1257,6 +1370,74 @@ function snapValueArray(actualValue = 0, validValues = []) {
   return snappedValue;
 }
 
+function updateAffectedAreaHold() {
+  if (mouse.left) {
+    // Check left and right
+    if (
+      Math.max(0, currentCoords.x - currentMode.strokeWidth) <
+      currentMode.affectedArea.x
+    ) {
+      currentMode.affectedArea.width = Math.min(
+        canvas.width,
+        currentMode.affectedArea.width +
+          Math.abs(
+            currentCoords.x -
+              currentMode.strokeWidth -
+              currentMode.affectedArea.x,
+          ),
+      );
+      currentMode.affectedArea.x = Math.max(
+        0,
+        currentCoords.x - currentMode.strokeWidth,
+      );
+      console.log(
+        "[callback:onmousemove]: affected area: ",
+        currentMode.affectedArea,
+      );
+    } else if (
+      Math.min(canvas.width, currentCoords.x + currentMode.strokeWidth) >
+      currentMode.affectedArea.x + currentMode.affectedArea.width
+    ) {
+      currentMode.affectedArea.width = Math.abs(
+        currentMode.affectedArea.x -
+          (currentCoords.x + currentMode.strokeWidth),
+      );
+    }
+
+    // Check up and down
+    if (
+      Math.max(0, currentCoords.y - currentMode.strokeWidth) <
+      currentMode.affectedArea.y
+    ) {
+      currentMode.affectedArea.height = Math.min(
+        canvas.height,
+        currentMode.affectedArea.height +
+          Math.abs(
+            currentCoords.y -
+              currentMode.strokeWidth -
+              currentMode.affectedArea.y,
+          ),
+      );
+      currentMode.affectedArea.y = Math.max(
+        0,
+        currentCoords.y - currentMode.strokeWidth,
+      );
+      console.log(
+        "[callback:onmousemove]: affected area: ",
+        currentMode.affectedArea,
+      );
+    } else if (
+      Math.min(canvas.height, currentCoords.y + currentMode.strokeWidth) >
+      currentMode.affectedArea.y + currentMode.affectedArea.height
+    ) {
+      currentMode.affectedArea.height = Math.abs(
+        currentMode.affectedArea.y -
+          (currentCoords.y + currentMode.strokeWidth),
+      );
+    }
+  }
+}
+
 function redoAction() {
   if (changeStateIndex == changeStack.length - 1 || changeStack.length == 1) {
     return;
@@ -1415,6 +1596,8 @@ function setupCanvasEvents() {
       y: Math.max(event.y - canvasOffsetY, 0),
     };
 
+    console.log("[event:mousemove] : currentCoords: ", currentCoords);
+
     if (currentMode.onMouseMove != null) {
       currentMode.onMouseMove();
     }
@@ -1490,7 +1673,7 @@ function setupUiEvents() {
 
   brushSizeInput.addEventListener("input", (event) => {
     brushSizeOutput.value = event.target.value;
-    modes[currentMode.mode].strokeWidth = event.target.value;
+    modes[currentMode.mode].strokeWidth = parseInt(event.target.value);
   });
 
   brushSizeInput.addEventListener("wheel", (event) => {
@@ -1500,7 +1683,7 @@ function setupUiEvents() {
       brushSizeInput.stepDown(2);
     }
     brushSizeOutput.value = brushSizeInput.value;
-    modes[currentMode.mode].strokeWidth = brushSizeInput.value;
+    modes[currentMode.mode].strokeWidth = parseInt(brushSizeInput.value);
   });
 
   brushSizeOutput.addEventListener("change", (event) => {
@@ -1508,7 +1691,7 @@ function setupUiEvents() {
       event.target.value = 500;
     }
     brushSizeInput.value = event.target.value;
-    modes[currentMode.mode].strokeWidth = event.target.value;
+    modes[currentMode.mode].strokeWidth = parseInt(event.target.value);
   });
 
   brushSizeOutput.addEventListener("wheel", (event) => {
@@ -1518,7 +1701,7 @@ function setupUiEvents() {
       brushSizeOutput.stepDown(2);
     }
     brushSizeInput.value = brushSizeOutput.value;
-    modes[currentMode.mode].strokeWidth = brushSizeOutput.value;
+    modes[currentMode.mode].strokeWidth = parseInt(brushSizeOutput.value);
   });
 
   document.querySelector("#colorPicker").addEventListener("change", (event) => {
@@ -1529,6 +1712,7 @@ function setupUiEvents() {
 
 function setupSignalRTest() {
   document.querySelector("#dialog").toggleAttribute("open");
+
   var connection = new signalR.HubConnectionBuilder()
     .withUrl("https://localhost:7196/chatHub")
     .build();
